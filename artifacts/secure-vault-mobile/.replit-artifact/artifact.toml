@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Secure Vault"
+description = "A privacy-first mobile identity vault with secure document storage, verification workflows, and a user-controlled Smart Fill assistant for supported forms."
+version = "1.0.0"
+id = "artifacts/secure-vault-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 21309
+
+[services.development]
+run = "pnpm --filter @workspace/secure-vault-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/secure-vault-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/secure-vault-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "21309"
+BASE_PATH = "/"
