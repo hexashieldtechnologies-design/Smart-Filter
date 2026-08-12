@@ -15,12 +15,30 @@ export default function DocumentsScreen() {
   const { documents, addDocument, addAudit } = useVault();
 
   const uploadDocument = async (document: VaultDocument) => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.65,
+      base64: true,
+    });
     if (result.canceled) return;
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await addDocument({ ...document, status: 'Processing', identifier: 'Review pending', updated: 'Just now', imageUri: result.assets[0]?.uri });
-    await addAudit('Document uploaded', `${document.label} is being processed securely`, 'cloud-upload-outline');
-    Alert.alert('Upload received', 'We will show you every extracted field for review before anything is saved.');
+    const asset = result.assets[0];
+    if (!asset) return;
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await addDocument({
+        ...document,
+        status: 'Processing',
+        identifier: 'Review pending',
+        updated: 'Just now',
+        imageUri: asset.uri,
+        imageData: asset.base64 ?? undefined,
+        contentType: asset.mimeType ?? 'image/jpeg',
+      });
+      await addAudit('Document uploaded', `${document.label} is being processed securely`, 'cloud-upload-outline');
+      Alert.alert('Upload received', 'The document is saved in your test vault. Review is required before any field is used.');
+    } catch {
+      Alert.alert('Upload failed', 'The document could not be saved to the test vault. Please check the API server and try again.');
+    }
   };
 
   return (

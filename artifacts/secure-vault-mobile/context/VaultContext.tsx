@@ -1,5 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  getListVaultDocumentsQueryKey,
+  useDeleteVaultDocument,
+  useListVaultDocuments,
+  useUpsertVaultDocument,
+  type VaultDocument as ApiVaultDocument,
+} from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export type DocumentStatus = 'Verified' | 'Not added' | 'Processing';
 
@@ -13,6 +21,8 @@ export type VaultDocument = {
   icon: string;
   color: 'aqua' | 'gold' | 'navy' | 'coral';
   imageUri?: string;
+  imageData?: string;
+  contentType?: string;
 };
 
 export type AuditItem = {
@@ -37,6 +47,15 @@ type VaultContextValue = {
   toggleSmartFill: () => Promise<void>;
   addAudit: (title: string, detail: string, icon: string) => Promise<void>;
   resetVault: () => Promise<void>;
+};
+
+type PersistedVaultState = {
+  ownerKey: string;
+  hasOnboarded: boolean;
+  documents: VaultDocument[];
+  auditItems: AuditItem[];
+  biometricEnabled: boolean;
+  smartFillEnabled: boolean;
 };
 
 const starterDocuments: VaultDocument[] = [
@@ -91,31 +110,96 @@ const starterAudit: AuditItem[] = [
 const VaultContext = createContext<VaultContextValue | null>(null);
 const STORAGE_KEY = 'secure-vault-local-state';
 
+function createOwnerKey() {
+  return `device-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
+function toLocalDocument(document: ApiVaultDocument): VaultDocument {
+  return {
+    id: document.id,
+    type: document.type,
+    label: document.label,
+    status: document.status,
+    identifier: document.identifier,
+    updated: document.updated,
+    icon: document.icon,
+    color: document.color,
+    imageData: document.imageData ?? undefined,
+    contentType: document.contentType ?? undefined,
+    imageUri: document.imageData
+      ? `data:${document.contentType ?? 'image/jpeg'};base64,${document.imageData}`
+      : undefined,
+  };
+}
+
+function toPersistedDocuments(documents: VaultDocument[]) {
+  return documents.map(({ imageData: _imageData, imageUri, ...document }) => ({
+    ...document,
+    ...(imageUri && !imageUri.startsWith('data:') ? { imageUri } : {}),
+  }));
+}
+
 export function VaultProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
+  const [ownerKey, setOwnerKey] = useState<string | null>(null);
   const [hasOnboarded, setHasOnboarded] = useState(false);
   const [documents, setDocuments] = useState<VaultDocument[]>(starterDocuments);
   const [auditItems, setAuditItems] = useState<AuditItem[]>(starterAudit);
   const [biometricEnabled, setBiometricEnabled] = useState(true);
   const [smartFillEnabled, setSmartFillEnabled] = useState(true);
+  const documentsQuery = useListVaultDocuments(
+    { ownerKey: ownerKey ?? 'pending-owner-key' },
+    {
+      query: {
+        enabled: Boolean(ownerKey && ready),
+        queryKey: getListVaultDocumentsQueryKey({ ownerKey: ownerKey ?? 'pending-owner-key' }),
+      },
+    },
+  );
+  const upsertDocument = useUpsertVaultDocument();
+  const deleteDocumentRemote = useDeleteVaultDocument();
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((stored) => {
-        if (stored) {
-          const parsed = JSON.parse(stored) as Partial<VaultContextValue>;
-          setHasOnboarded(Boolean(parsed.hasOnboarded));
-          if (parsed.documents) setDocuments(parsed.documents);
-          if (parsed.auditItems) setAuditItems(parsed.auditItems);
-          if (typeof parsed.biometricEnabled === 'boolean') setBiometricEnabled(parsed.biometricEnabled);
-          if (typeof parsed.smartFillEnabled === 'boolean') setSmartFillEnabled(parsed.smartFillEnabled);
+    AsyncStorage.getItem(STORAGE_KEY).then(async (stored) => {
+      let parsed: Partial<PersistedVaultState> = {};
+      if (stored) {
+        try {
+          parsed = JSON.parse(stored) as Partial<PersistedVaultState>;
+        } catch {
+          parsed = {};
         }
-      })
-      .catch(() => undefined)
-      .finally(() => setReady(true));
+      }
+      const nextOwnerKey = parsed.ownerKey ?? createOwnerKey();
+      setOwnerKey(nextOwnerKey);
+      if (!parsed.ownerKey) {
+        await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify({ ownerKey: nextOwnerKey }));
+      }
+      setHasOnboarded(Boolean(parsed.hasOnboarded));
+      if (parsed.documents) setDocuments(parsed.documents);
+      if (parsed.auditItems) setAuditItems(parsed.auditItems);
+      if (typeof parsed.biometricEnabled === 'boolean') setBiometricEnabled(parsed.biometricEnabled);
+      if (typeof parsed.smartFillEnabled === 'boolean') setSmartFillEnabled(parsed.smartFillEnabled);
+    }).catch(() => {
+      setOwnerKey(createOwnerKey());
+    }).finally(() => setReady(true));
   }, []);
 
-  const persist = async (next: Partial<VaultContextValue>) => {
+  useEffect(() => {
+    if (!documentsQuery.data) return;
+    const remoteDocuments = documentsQuery.data.map(toLocalDocument);
+    const remoteById = new Map(remoteDocuments.map((document) => [document.id, document]));
+    const starterIds = new Set(starterDocuments.map((document) => document.id));
+    setDocuments((current) => {
+      const currentById = new Map(current.map((document) => [document.id, document]));
+      return [
+        ...starterDocuments.map((starter) => remoteById.get(starter.id) ?? currentById.get(starter.id) ?? starter),
+        ...remoteDocuments.filter((document) => !starterIds.has(document.id)),
+      ];
+    });
+  }, [documentsQuery.data]);
+
+  const persist = async (next: Partial<PersistedVaultState>) => {
     await AsyncStorage.mergeItem(STORAGE_KEY, JSON.stringify(next));
   };
 
@@ -125,16 +209,37 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addDocument = async (document: VaultDocument) => {
-    const next = documents.map((item) => item.id === document.id ? document : item);
-    if (!documents.some((item) => item.id === document.id)) next.push(document);
+    if (!ownerKey) throw new Error('Vault is still being prepared');
+    const saved = await upsertDocument.mutateAsync({
+      documentId: document.id,
+      data: {
+        ownerKey,
+        type: document.type,
+        label: document.label,
+        status: document.status,
+        identifier: document.identifier,
+        updated: document.updated,
+        icon: document.icon,
+        color: document.color,
+        imageData: document.imageData ?? null,
+        contentType: document.contentType ?? null,
+      },
+    });
+    const savedDocument = toLocalDocument(saved);
+    const next = documents.map((item) => item.id === savedDocument.id ? savedDocument : item);
+    if (!documents.some((item) => item.id === savedDocument.id)) next.push(savedDocument);
     setDocuments(next);
-    await persist({ documents: next });
+    await persist({ documents: toPersistedDocuments(next) });
+    await queryClient.invalidateQueries({ queryKey: getListVaultDocumentsQueryKey({ ownerKey }) });
   };
 
   const deleteDocument = async (id: string) => {
+    if (!ownerKey) throw new Error('Vault is still being prepared');
+    await deleteDocumentRemote.mutateAsync({ documentId: id, data: { ownerKey } });
     const next = documents.map((item) => item.id === id ? { ...item, status: 'Not added' as const, identifier: 'Ready when you are', imageUri: undefined } : item);
     setDocuments(next);
-    await persist({ documents: next });
+    await persist({ documents: toPersistedDocuments(next) });
+    await queryClient.invalidateQueries({ queryKey: getListVaultDocumentsQueryKey({ ownerKey }) });
     await addAudit('Document removed', 'The document was deleted from your vault', 'trash-outline');
   };
 

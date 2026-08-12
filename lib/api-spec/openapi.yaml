@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: vault
+    description: Test vault document operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /vault/documents:
+    get:
+      operationId: listVaultDocuments
+      tags: [vault]
+      summary: List documents in a device vault
+      parameters:
+        - name: ownerKey
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 8
+      responses:
+        "200":
+          description: Vault documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VaultDocument"
+  /vault/documents/{documentId}:
+    put:
+      operationId: upsertVaultDocument
+      tags: [vault]
+      summary: Save a document in a device vault
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaultDocumentInput"
+      responses:
+        "200":
+          description: Saved vault document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultDocument"
+    delete:
+      operationId: deleteVaultDocument
+      tags: [vault]
+      summary: Delete a document from a device vault
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaultDocumentDeleteInput"
+      responses:
+        "204":
+          description: Document deleted
 components:
   schemas:
     HealthStatus:
@@ -33,4 +99,64 @@ components:
           type: string
       required:
         - status
+    VaultDocument:
+      type: object
+      required: [id, type, label, status, identifier, updated, icon, color]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+          enum: [Verified, "Not added", Processing]
+        identifier:
+          type: string
+        updated:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+          enum: [aqua, gold, navy, coral]
+        imageData:
+          type: ["string", "null"]
+        contentType:
+          type: ["string", "null"]
+    VaultDocumentInput:
+      type: object
+      required: [ownerKey, type, label, status, identifier, updated, icon, color]
+      properties:
+        ownerKey:
+          type: string
+          minLength: 8
+        type:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+          enum: [Verified, "Not added", Processing]
+        identifier:
+          type: string
+        updated:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+          enum: [aqua, gold, navy, coral]
+        imageData:
+          type: ["string", "null"]
+        contentType:
+          type: ["string", "null"]
+    VaultDocumentDeleteInput:
+      type: object
+      required: [ownerKey]
+      properties:
+        ownerKey:
+          type: string
+          minLength: 8
 

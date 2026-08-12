@@ -41,10 +41,30 @@ export default function SignupScreen() {
   };
 
   const uploadIdentity = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
-    if (!result.canceled) {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.65,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    try {
+      await addDocument({
+        id: 'aadhaar',
+        type: 'Identity',
+        label: 'Aadhaar Card',
+        status: 'Processing',
+        identifier: 'Review pending',
+        updated: 'Just now',
+        icon: 'card-outline',
+        color: 'aqua',
+        imageUri: asset.uri,
+        imageData: asset.base64 ?? undefined,
+        contentType: asset.mimeType ?? 'image/jpeg',
+      });
       setUploaded(true);
-      await addDocument({ id: 'aadhaar', type: 'Identity', label: 'Aadhaar Card', status: 'Processing', identifier: 'Review pending', updated: 'Just now', icon: 'card-outline', color: 'aqua', imageUri: result.assets[0]?.uri });
+    } catch {
+      Alert.alert('Upload failed', 'The document could not be saved to the test vault. Please try again.');
     }
   };
 
