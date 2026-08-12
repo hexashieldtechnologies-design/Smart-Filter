@@ -1,0 +1,1 @@
+- [Smart Fill platform boundary](smart-fill-platform-boundary.md) — keep controlled in-app forms separate from native Android overlay/browser integrations.

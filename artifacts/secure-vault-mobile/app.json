@@ -16,7 +16,11 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "permissions": [
+        "SYSTEM_ALERT_WINDOW"
+      ]
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },

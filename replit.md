@@ -1,6 +1,6 @@
-# [Project name]
+# Secure Vault
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Secure Vault keeps identity documents organized and helps users complete supported forms only after explicit review.
 
 ## Run & Operate
 
@@ -22,23 +22,33 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/secure-vault-mobile/app/` — Expo Router screens for the vault, documents, Smart Fill, activity, and security flows
+- `artifacts/secure-vault-mobile/context/VaultContext.tsx` — local vault state and audit history
+- `artifacts/secure-vault-mobile/constants/colors.ts` — shared light/dark visual tokens
+- `artifacts/secure-vault-mobile/services/smartFillNative.ts` — Android Smart Fill bridge contract and permission fallbacks
+- `artifacts/api-server/` — shared Express API service
+- `lib/api-spec/openapi.yaml` — API source of truth
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Smart Fill is user-confirmed: it proposes matches, lets users select fields, and never submits forms.
+- Sensitive fields require a second confirmation and are masked where possible.
+- Web/Expo preview uses a controlled in-app form; cross-app Android overlay and accessibility interaction require a native `SmartFillModule` bridge.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Stores verified identity documents locally for the prototype experience.
+- Supports reviewable Smart Fill sessions with confidence scores, sensitive-field confirmation, pause/stop controls, and completion summaries.
+- Records privacy-safe activity events without storing full form values.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+No additional preferences recorded.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Do not claim unrestricted Chrome DOM access from an overlay. Use the native bridge for supported Android interaction or a controlled WebView/browser integration.
+- Treat consent, CAPTCHA/security challenges, payments, and final submission as manual user actions.
 
 ## Pointers
 
