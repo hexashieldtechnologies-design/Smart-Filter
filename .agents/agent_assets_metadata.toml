@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "bNFcZ5iUdzJUKlxKwv8LG"
+uri = "file://attached_assets/secure-vault-mobile-source.zip"
+type = "unspecified"
+title = "Secure Vault mobile source ZIP"
+description = "Direct download of the current Secure Vault Expo mobile source. Note: this is a source bundle, not an installable APK."
