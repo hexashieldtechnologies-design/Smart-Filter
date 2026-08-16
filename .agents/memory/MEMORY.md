@@ -5,3 +5,4 @@
 - [Android Autofill boundary](android-autofill-boundary.md) — use Android Autofill for credential values and keep Accessibility limited to approved non-password fields.
 - [MCP agent bridge boundary](mcp-agent-bridge-boundary.md) — expose scoped vault data through local MCP; browser filling requires a paired, origin-bound bridge and approval.
 - [Android deep-link handoff](android-deep-link-handoff.md) — singleTask activity actions from the native overlay must refresh the activity intent before Expo Router can process them.
+- [GitHub HTTPS push authentication](github-push-auth.md) — API Bearer auth and Git HTTPS push auth differ; use transient Basic auth for Git transport.
