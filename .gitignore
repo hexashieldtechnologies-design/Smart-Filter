@@ -5,11 +5,29 @@ dist
 tmp
 out-tsc
 *.tsbuildinfo
+
+# Local Android/Expo build output
+**/android/**/build/
+**/android/**/.cxx/
+**/android/.gradle/
+**/static-build/
+
+# Local release packages and generated build diagnostics
+*.apk
+*.aab
+*.sha256
+*.log
+*.pid
+**/release-package/
 .expo
 .expo-shared
 
 # dependencies
 node_modules
+
+# Local Android toolchain/cache (never part of the source repository)
+.android-sdk/
+.gradle-cache/
 
 # IDEs and editors
 /.idea

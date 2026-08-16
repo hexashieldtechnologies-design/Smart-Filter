@@ -77,6 +77,7 @@ export function DocumentCard({ document, onPress, onUpload }: { document: VaultD
   const iconColor = document.color === 'aqua' ? colors.primary : document.color === 'gold' ? colors.gold : document.color === 'coral' ? colors.destructive : colors.navy;
   return (
     <Pressable onPress={document.status === 'Not added' ? onUpload : onPress} style={({ pressed }) => [styles.documentCard, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.88 : 1 }]}>
+      <View style={[styles.documentAccent, { backgroundColor: iconColor }]} />
       <View style={[styles.docIcon, { backgroundColor: `${iconColor}20` }]}>
         <Ionicons name={document.icon as keyof typeof Ionicons.glyphMap} size={25} color={iconColor} />
       </View>
@@ -145,7 +146,8 @@ export const styles = StyleSheet.create({
   sectionAction: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 5 },
   statusText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
-  documentCard: { minHeight: 100, borderRadius: 22, borderWidth: 1, padding: 15, flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 10 },
+  documentCard: { minHeight: 100, borderRadius: 18, borderWidth: 1, padding: 15, paddingLeft: 12, flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 10, overflow: 'hidden' },
+  documentAccent: { width: 4, height: 55, borderRadius: 4, marginRight: -4 },
   docIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   docBody: { flex: 1, gap: 2 },
   docType: { fontFamily: 'Inter_500Medium', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.7 },

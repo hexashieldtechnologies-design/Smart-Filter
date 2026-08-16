@@ -1,0 +1,1369 @@
+हाँ भाई, अब requirement बिल्कुल clear है: **100% local-first**, sensitive documents/JSON/images cloud पर नहीं जाएँगे, और AI footprint **20–25 MB target** रहेगा ताकि 2 GB RAM वाले Android phones पर भी practical रहे।
+
+एक correction: **पूरे app का APK/IPA 20–25 MB रखना** और **AI model को 20–25 MB रखना** अलग चीजें हैं। अगर तुम्हारा मतलब *AI model* 20–25 MB है, तो नीचे वाला architecture सही है। पूरे app को 20–25 MB में रखना अलग optimization project होगा।
+
+तुम्हारे developer/coding agent को यह updated MD prompt दो:
+
+````markdown
+# LOCAL-FIRST DOCUMENT AI + SMART FILL
+## STRICT 20–25 MB AI MODEL BUDGET
+## OFFLINE / ON-DEVICE ARCHITECTURE
+## Flutter + Dart
+## Android + iOS
+
+---
+
+# 1. CORE REQUIREMENT
+
+This entire AI/document-processing system must be LOCAL-FIRST.
+
+Sensitive user data must remain on the user's device by default.
+
+The system must NOT require a cloud server for:
+
+- OCR
+- Aadhaar document processing
+- PAN document processing
+- JSON generation
+- Profile storage
+- Document storage
+- Document parsing
+- Field mapping
+- Smart Fill decision making
+- Local form analysis where platform APIs permit it
+
+The application must remain functional without an internet connection for all local features.
+
+Internet should NOT be required merely to read or process a document.
+
+---
+
+# 2. STRICT MODEL SIZE REQUIREMENT
+
+The AI model package must target:
+
+MINIMUM:
+20 MB class
+
+MAXIMUM:
+25 MB
+
+DO NOT bundle a large LLM.
+
+DO NOT download another large model after installation.
+
+DO NOT silently download model files in the background.
+
+The production AI model package must stay within the defined 20–25 MB budget.
+
+Measure:
+
+- raw model size
+- compressed model size
+- final packaged size
+- runtime memory
+- RAM usage
+
+Do not confuse model size with complete APK/IPA size.
+
+---
+
+# 3. 2 GB RAM DEVICE REQUIREMENT
+
+The application must be designed for low-memory devices.
+
+Target:
+
+```text
+2 GB RAM Android device
+````
+
+The application should remain usable without:
+
+* unnecessary lag
+* continuous high CPU usage
+* continuous GPU usage
+* excessive memory allocation
+* background AI processing
+* unnecessary model reloads
+
+---
+
+# 4. LOCAL ARCHITECTURE
+
+Use:
+
+```text
+Flutter UI
+     |
+     +----------------------+
+     |                      |
+     ↓                      ↓
+Local Database        Local Document Vault
+     |                      |
+     +----------+-----------+
+                |
+                ↓
+         Local AI Engine
+                |
+       +--------+--------+
+       |        |        |
+       ↓        ↓        ↓
+      OCR   Parser   Field Classifier
+       |        |        |
+       +--------+--------+
+                |
+                ↓
+        Smart Fill Engine
+                |
+                ↓
+       Supported Browser/Form
+```
+
+No cloud AI dependency.
+
+---
+
+# 5. LOCAL STORAGE
+
+All user-generated data must remain local.
+
+Examples:
+
+```text
+Profile JSON
+Aadhaar metadata
+PAN metadata
+Document metadata
+Document images
+OCR results
+Field mappings
+User preferences
+Smart Fill configuration
+```
+
+must be stored locally.
+
+---
+
+# 6. JSON STORAGE
+
+JSON files must NOT be stored on a remote server.
+
+Example local structure:
+
+```text
+AppPrivateStorage/
+│
+├── profile/
+│   └── profile.json.enc
+│
+├── documents/
+│   ├── aadhaar/
+│   │   ├── metadata.json.enc
+│   │   └── document.enc
+│   │
+│   └── pan/
+│       ├── metadata.json.enc
+│       └── document.enc
+│
+├── models/
+│   ├── ocr_detector
+│   ├── ocr_recognizer
+│   └── field_classifier
+│
+└── settings/
+    └── settings.json.enc
+```
+
+Do not use public/shared storage for sensitive files unless absolutely required by the platform.
+
+Prefer application-private storage.
+
+---
+
+# 7. ENCRYPTED LOCAL STORAGE
+
+Sensitive JSON must NOT be stored as plaintext.
+
+Instead:
+
+```text
+profile.json
+       ↓
+Encrypt
+       ↓
+profile.json.enc
+```
+
+Documents:
+
+```text
+aadhaar.jpg
+       ↓
+Encrypt
+       ↓
+aadhaar.enc
+```
+
+PAN:
+
+```text
+pan.jpg
+       ↓
+Encrypt
+       ↓
+pan.enc
+```
+
+---
+
+# 8. KEY MANAGEMENT
+
+Do NOT store encryption keys inside:
+
+```text
+JSON
+SharedPreferences
+Dart source code
+plain text files
+```
+
+Use platform secure storage:
+
+Android:
+
+* Android Keystore
+
+iOS:
+
+* Keychain
+
+Flutter should access this through a secure-storage abstraction.
+
+---
+
+# 9. LOCAL DATA LIFECYCLE
+
+When user registers:
+
+```text
+Registration
+    ↓
+Create local user profile
+    ↓
+Generate local encryption key
+    ↓
+Store key securely
+    ↓
+Create encrypted local database
+    ↓
+Create local profile JSON
+```
+
+No server upload.
+
+---
+
+# 10. DOCUMENT ADD FLOW
+
+Example:
+
+```text
+Dashboard
+   ↓
+Add Aadhaar
+   ↓
+Choose:
+   Camera
+   Gallery
+   Files
+   ↓
+Select document
+   ↓
+Local processing
+   ↓
+OCR
+   ↓
+Extract fields
+   ↓
+Show extracted information
+   ↓
+User confirms
+   ↓
+Encrypt document
+   ↓
+Save locally
+   ↓
+Save encrypted JSON metadata
+```
+
+---
+
+# 11. NORMAL DOCUMENT UPLOAD
+
+The application must behave like a normal mobile file uploader.
+
+If a website/form asks:
+
+```text
+Upload Aadhaar Card
+```
+
+the Smart Fill system should NOT ask the user to upload the Aadhaar again if the user has already securely stored it in the app.
+
+Instead:
+
+```text
+Website asks for Aadhaar
+        ↓
+Smart Fill detects upload field
+        ↓
+Identify expected document
+        ↓
+Show:
+"Use saved Aadhaar?"
+        ↓
+User confirms
+        ↓
+Use locally stored document
+        ↓
+Provide file to the supported upload mechanism
+```
+
+The original document must remain local.
+
+---
+
+# 12. DOCUMENT MATCHING
+
+If website field says:
+
+```text
+Upload Aadhaar
+```
+
+match:
+
+```text
+documentType = AADHAAR
+```
+
+If:
+
+```text
+Upload PAN
+```
+
+match:
+
+```text
+documentType = PAN
+```
+
+Do not confuse documents.
+
+---
+
+# 13. DOCUMENT CONFIDENCE
+
+If website asks:
+
+```text
+Upload Identity Proof
+```
+
+and multiple documents are available:
+
+```text
+Aadhaar
+PAN
+Passport
+Driving Licence
+```
+
+DO NOT automatically choose one unless the website clearly specifies the required document.
+
+Show:
+
+```text
+Which document do you want to use?
+
+[ Aadhaar ]
+[ PAN ]
+[ Passport ]
+[ Driving Licence ]
+[ Cancel ]
+```
+
+---
+
+# 14. LOCAL DOCUMENT VAULT
+
+Create:
+
+```text
+LocalDocumentVault
+```
+
+Responsibilities:
+
+```text
+saveDocument()
+getDocument()
+replaceDocument()
+deleteDocument()
+listDocuments()
+getDocumentMetadata()
+```
+
+All operations must be local.
+
+---
+
+# 15. LOCAL PROFILE
+
+Create:
+
+```text
+LocalProfileRepository
+```
+
+Responsibilities:
+
+```text
+createProfile()
+updateProfile()
+getProfile()
+deleteProfile()
+```
+
+Example:
+
+```json
+{
+  "fullName": "",
+  "firstName": "",
+  "lastName": "",
+  "dateOfBirth": "",
+  "gender": "",
+  "mobile": "",
+  "email": "",
+  "address": {},
+  "aadhaar": {},
+  "pan": {}
+}
+```
+
+Sensitive values must be encrypted at rest.
+
+---
+
+# 16. OCR MUST RUN LOCALLY
+
+When user selects Aadhaar:
+
+```text
+Image
+ ↓
+Local OCR
+ ↓
+Text
+ ↓
+Bounding boxes
+ ↓
+Local document parser
+```
+
+Do NOT:
+
+```text
+Image
+ ↓
+Internet
+ ↓
+Cloud OCR
+```
+
+---
+
+# 17. OFFLINE DOCUMENT PROCESSING
+
+Test:
+
+```text
+Disable Wi-Fi
+Disable mobile data
+Open app
+Upload Aadhaar
+Run OCR
+Extract fields
+Save document
+```
+
+This must work.
+
+---
+
+# 18. MODEL ARCHITECTURE
+
+Use a lightweight mobile OCR engine plus deterministic parsing.
+
+Recommended architecture:
+
+```text
+Mobile OCR
++
+Tiny field classifier
++
+Document-specific parser
++
+Regex
++
+Validation
++
+Layout analysis
+```
+
+Do NOT use a general-purpose LLM.
+
+---
+
+# 19. MODEL FOOTPRINT
+
+Target:
+
+```text
+OCR + Field Classifier
+≈ 20–25 MB
+```
+
+If the selected OCR model already provides sufficient accuracy, do NOT add unnecessary models.
+
+Every model must justify its memory and storage cost.
+
+---
+
+# 20. MODEL LOADING
+
+DO NOT load every model into RAM at application startup.
+
+Bad:
+
+```text
+App Start
+ ↓
+Load all AI models
+ ↓
+Dashboard
+```
+
+Preferred:
+
+```text
+App Start
+ ↓
+Dashboard
+ ↓
+User uploads document
+ ↓
+Load OCR model
+ ↓
+Process document
+ ↓
+Release unnecessary resources
+```
+
+Use lazy loading.
+
+---
+
+# 21. MODEL MEMORY MANAGEMENT
+
+On low-memory devices:
+
+```text
+Detect memory pressure
+        ↓
+Release unused AI resources
+        ↓
+Close image buffers
+        ↓
+Release temporary tensors
+        ↓
+Keep only required services active
+```
+
+Never keep multiple large image copies in memory.
+
+---
+
+# 22. IMAGE PROCESSING
+
+Do not process original 20–50 MB camera images directly.
+
+Use:
+
+```text
+Original
+ ↓
+Temporary optimized copy
+ ↓
+OCR
+ ↓
+Release temporary image
+```
+
+Keep the original document securely stored if required.
+
+---
+
+# 23. OCR PIPELINE
+
+```text
+Input Image
+ ↓
+Orientation Detection
+ ↓
+Resize
+ ↓
+Perspective Correction
+ ↓
+Noise Reduction
+ ↓
+OCR
+ ↓
+Text + Bounding Boxes
+```
+
+Keep processing local.
+
+---
+
+# 24. DOCUMENT PARSER
+
+After OCR:
+
+```text
+OCR output
+ ↓
+Document classifier
+ ↓
+Aadhaar parser / PAN parser
+ ↓
+Field extraction
+```
+
+Example:
+
+```json
+{
+  "documentType": "AADHAAR",
+  "fields": {
+    "fullName": {
+      "value": "USER NAME",
+      "confidence": 0.98
+    },
+    "aadhaarNumber": {
+      "value": "XXXXXXXXXXXX",
+      "confidence": 0.99
+    }
+  }
+}
+```
+
+---
+
+# 25. TRAINING
+
+The model should be trained specifically for:
+
+```text
+Document OCR
+Identity-document field extraction
+Document classification
+Form-field classification
+```
+
+NOT general conversation.
+
+---
+
+# 26. TRAINING DATA PRIVACY
+
+Do NOT collect real user Aadhaar/PAN documents for training without proper legal authorization and consent.
+
+Prefer:
+
+```text
+Synthetic documents
+Redacted documents
+Consent-based documents
+Publicly licensed datasets
+```
+
+---
+
+# 27. DOCUMENT FIELD TRAINING
+
+Train the parser/classifier to recognize:
+
+```text
+FULL_NAME
+FIRST_NAME
+LAST_NAME
+DOB
+GENDER
+AADHAAR_NUMBER
+PAN_NUMBER
+PHONE
+EMAIL
+ADDRESS
+CITY
+DISTRICT
+STATE
+PINCODE
+```
+
+---
+
+# 28. HTML FORM UNDERSTANDING
+
+When Smart Fill is started on a supported browser/form:
+
+```text
+Current webpage/form
+        ↓
+Read supported DOM/form metadata
+        ↓
+Extract input fields
+        ↓
+Classify fields
+        ↓
+Match against local profile
+```
+
+Use:
+
+```text
+id
+name
+type
+placeholder
+label
+aria-label
+aria-labelledby
+autocomplete
+nearby text
+fieldset
+legend
+```
+
+---
+
+# 29. SMART FILL EXAMPLE
+
+Website:
+
+```html
+<label>Full Name</label>
+<input name="full_name">
+```
+
+Local profile:
+
+```json
+{
+  "fullName": "USER NAME"
+}
+```
+
+Mapping:
+
+```text
+full_name
+      ↓
+fullName
+      ↓
+USER NAME
+```
+
+Then fill the field.
+
+---
+
+# 30. DOCUMENT UPLOAD FIELD
+
+If supported integration detects:
+
+```html
+<input type="file">
+```
+
+and surrounding text says:
+
+```text
+Upload Aadhaar
+```
+
+then:
+
+```text
+Detect document requirement
+        ↓
+Find local Aadhaar
+        ↓
+Ask user confirmation
+        ↓
+Use supported platform file-selection mechanism
+```
+
+Do NOT silently upload a sensitive document without user confirmation.
+
+---
+
+# 31. USER CONTROL
+
+Before a sensitive document is used:
+
+```text
+Use saved Aadhaar for this upload?
+
+[Cancel]
+[Use Aadhaar]
+```
+
+After confirmation, use the document through supported platform mechanisms.
+
+---
+
+# 32. SMART FILL TEXT FIELDS
+
+For normal text fields:
+
+```text
+Read field
+ ↓
+Map semantic meaning
+ ↓
+Retrieve local value
+ ↓
+Validate
+ ↓
+Fill
+```
+
+---
+
+# 33. SMART FILL DOCUMENTS
+
+For document upload:
+
+```text
+Read upload field
+ ↓
+Identify requested document
+ ↓
+Find local document
+ ↓
+Ask confirmation
+ ↓
+Use supported file provider/browser integration
+```
+
+---
+
+# 34. NO UNAUTHORIZED SCREEN SCRAPING
+
+Do NOT continuously capture the user's entire screen.
+
+Only process the minimum webpage/form information required for Smart Fill.
+
+Do not collect unrelated information from other applications.
+
+---
+
+# 35. NO CLOUD FALLBACK
+
+If internet is unavailable:
+
+```text
+Do NOT automatically send data to cloud.
+```
+
+If a required local operation cannot be performed:
+
+```text
+Show:
+"This operation requires supported local/browser integration."
+```
+
+Do not upload private documents as a fallback.
+
+---
+
+# 36. JSON EXPORT
+
+If user explicitly chooses:
+
+```text
+Export Profile
+```
+
+create a local file.
+
+Example:
+
+```text
+profile_export.json
+```
+
+Ask where/how to share it.
+
+Do not automatically upload it anywhere.
+
+---
+
+# 37. JSON IMPORT
+
+If user imports:
+
+```text
+profile.json
+```
+
+validate:
+
+```text
+Schema
+Version
+Integrity
+Data types
+```
+
+before importing.
+
+---
+
+# 38. BACKUP
+
+If backup is implemented, make it explicitly user-controlled.
+
+Default:
+
+```text
+No cloud backup
+```
+
+Possible:
+
+```text
+Encrypted local backup
+```
+
+The application must clearly tell the user where the backup is stored.
+
+---
+
+# 39. APP UPDATE
+
+Updating the application must NOT delete:
+
+```text
+profile
+documents
+JSON
+encryption keys
+settings
+```
+
+Migration flow:
+
+```text
+Old local database
+       ↓
+Migration
+       ↓
+New schema
+       ↓
+Existing documents preserved
+```
+
+---
+
+# 40. APP UNINSTALL
+
+Do not claim that documents survive uninstall unless a deliberate backup mechanism exists.
+
+Normal behavior should be:
+
+```text
+Uninstall app
+ ↓
+Application-private local data removed
+```
+
+If user wants backup:
+
+```text
+Explicit encrypted backup
+```
+
+must be created first.
+
+---
+
+# 41. BIOMETRIC SESSION
+
+The app should authenticate once when opening the secure vault:
+
+```text
+Open App
+ ↓
+Fingerprint / Face / Device Credential
+ ↓
+Unlock local vault
+ ↓
+Authenticated session
+ ↓
+Dashboard
+```
+
+Do not repeatedly ask for biometric authentication during normal operations.
+
+---
+
+# 42. DOCUMENT UPLOAD + BIOMETRIC
+
+Never do:
+
+```text
+Open file picker
+ ↓
+Biometric prompt
+ ↓
+File picker interrupted
+```
+
+Correct:
+
+```text
+Check session
+ ↓
+Authenticate if required
+ ↓
+Open file picker
+ ↓
+Select file
+ ↓
+Process file
+```
+
+---
+
+# 43. SMART FILL SECURITY
+
+Smart Fill should use the existing authenticated local session.
+
+It must not ask for authentication for every single field.
+
+If session expires:
+
+```text
+Smart Fill
+ ↓
+Session expired
+ ↓
+Authenticate
+ ↓
+Continue
+```
+
+---
+
+# 44. CAPTCHA / OTP / PAYMENT
+
+Never bypass:
+
+```text
+CAPTCHA
+OTP
+UPI PIN
+CVV
+Payment authorization
+Password
+2FA
+```
+
+Smart Fill should pause and let the user complete these manually.
+
+---
+
+# 45. NO AUTOMATIC FORM SUBMISSION
+
+Smart Fill:
+
+```text
+FILL
+```
+
+NOT:
+
+```text
+SUBMIT
+```
+
+The final submission must remain under user control.
+
+---
+
+# 46. LOCAL SECURITY
+
+Do NOT log:
+
+```text
+Aadhaar number
+PAN
+DOB
+Full address
+Document OCR text
+Document images
+Phone number
+Email
+```
+
+Logs should contain only technical information.
+
+Example:
+
+```text
+OCR started
+OCR completed
+Fields detected: 8
+Fields matched: 6
+```
+
+---
+
+# 47. PERFORMANCE TARGET
+
+On a 2 GB RAM Android device:
+
+Target:
+
+```text
+Fast app startup
+Low idle memory
+No continuous AI inference
+Lazy model loading
+Short OCR processing
+No background OCR
+No unnecessary animations during inference
+```
+
+AI should only run when required.
+
+---
+
+# 48. RESOURCE MANAGEMENT
+
+After OCR:
+
+```text
+OCR complete
+ ↓
+Convert results to structured JSON
+ ↓
+Save results
+ ↓
+Release OCR image/tensor memory
+```
+
+Do not retain huge image buffers.
+
+---
+
+# 49. SMART FILL PERFORMANCE
+
+Do not repeatedly analyze the entire webpage.
+
+Instead:
+
+```text
+Page load
+ ↓
+Analyze relevant form
+ ↓
+Cache field metadata
+ ↓
+Monitor only meaningful DOM changes
+```
+
+If page does not change:
+
+```text
+Do not re-run AI analysis.
+```
+
+---
+
+# 50. FINAL LOCAL DATA FLOW
+
+```text
+             USER
+               |
+               ↓
+          UPLOAD DOCUMENT
+               |
+               ↓
+        LOCAL DEVICE ONLY
+               |
+               ↓
+         LOCAL OCR MODEL
+               |
+               ↓
+        DOCUMENT PARSER
+               |
+               ↓
+       STRUCTURED JSON
+               |
+               ↓
+        USER CONFIRMATION
+               |
+               ↓
+       ENCRYPTED LOCAL VAULT
+               |
+               ↓
+          LOCAL PROFILE
+               |
+               ↓
+        SMART FILL ENGINE
+               |
+               ↓
+       SUPPORTED WEB FORM
+               |
+               ↓
+         USER REVIEW
+               |
+               ↓
+              FILL
+```
+
+---
+
+# 51. FINAL ACCEPTANCE TEST
+
+Disable:
+
+```text
+Wi-Fi
+Mobile Data
+Bluetooth if not required
+```
+
+Then test:
+
+```text
+1. Open application
+2. Unlock with fingerprint
+3. Open Dashboard
+4. Add Aadhaar
+5. Select local image
+6. OCR runs
+7. Fields extracted
+8. User confirms
+9. Aadhaar encrypted locally
+10. JSON metadata saved locally
+11. Close app
+12. Reopen
+13. Authenticate
+14. Aadhaar still available
+15. Add PAN
+16. OCR runs locally
+17. PAN stored locally
+18. Open Smart Fill
+19. Open supported form
+20. Analyze fields
+21. Match local profile
+22. Ask before sensitive document upload
+23. Fill approved fields
+24. Do not submit form
+```
+
+Everything that is supposed to work offline must continue to work.
+
+---
+
+# 52. FINAL DEVELOPER RULE
+
+PRIORITY ORDER:
+
+1. Privacy
+2. Local processing
+3. Correctness
+4. Security
+5. Low RAM usage
+6. Performance
+7. Model size
+
+Never sacrifice document accuracy simply to make the model smaller.
+
+Never send sensitive documents to a remote server simply because local processing failed.
+
+Never fabricate missing information.
+
+Never automatically submit a form.
+
+Never bypass CAPTCHA, OTP, payment authentication, or other security controls.
+
+---
+
+# FINAL ARCHITECTURE
+
+Use:
+
+```text
+Flutter
++
+Local Encrypted Storage
++
+Android Keystore / iOS Keychain
++
+Lightweight Mobile OCR
++
+Tiny Field Classifier
++
+Document-specific Parser
++
+DOM/Form Analyzer
++
+Deterministic Field Mapper
++
+Smart Fill
+```
+
+Target AI footprint:
+
+```text
+20–25 MB
+```
+
+Target device:
+
+```text
+Android 2 GB RAM
+```
+
+Operating principle:
+
+```text
+LOCAL FIRST
+OFFLINE FIRST
+PRIVACY FIRST
+USER CONTROLLED
+```
+
+```
+
+**सबसे important बात:** Aadhaar/PAN जैसी sensitive files को सीधे किसी hidden background process से किसी website पर upload मत करवाना। सही design यह है कि app **पहले बताए कि किस document की जरूरत है, user confirmation ले, फिर supported Android/iOS browser/file-provider mechanism से file select/use करे**। इससे तुम्हारा app secure भी रहेगा और accidental गलत document upload भी नहीं होगा।
+```

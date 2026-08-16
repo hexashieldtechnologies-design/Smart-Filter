@@ -14,6 +14,7 @@ import {
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { VaultProvider } from '@/context/VaultContext';
+import { SecurityProvider } from '@/context/SecurityContext';
 import { setBaseUrl } from '@workspace/api-client-react';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -31,6 +32,7 @@ function RootLayoutNav() {
       <Stack.Screen name="signup" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="security" options={{ headerShown: false }} />
       <Stack.Screen name="privacy" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="document/[id]" options={{ headerShown: false }} />
     </Stack>
   );
@@ -57,11 +59,13 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <VaultProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
+            <SecurityProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <KeyboardProvider>
+                  <RootLayoutNav />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </SecurityProvider>
           </VaultProvider>
         </QueryClientProvider>
       </ErrorBoundary>

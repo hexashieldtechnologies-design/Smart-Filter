@@ -8,6 +8,11 @@
 
 export * from './healthStatus';
 export * from './listVaultDocumentsParams';
+export * from './smartFillScreenshotAnalysis';
+export * from './smartFillScreenshotField';
+export * from './smartFillScreenshotInput';
+export * from './smartFillScreenshotInputMimeType';
+export * from './smartFillScreenshotPlacement';
 export * from './vaultDocument';
 export * from './vaultDocumentColor';
 export * from './vaultDocumentDeleteInput';

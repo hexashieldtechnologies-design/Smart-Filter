@@ -1,0 +1,299 @@
+हाँ, समझ गया। तुम्हारी समस्या यह है कि **Start with Find → Permission** दबाने पर app को **App Info** (`Settings → Apps → Your App`) पर नहीं भेजना है।
+
+तुम चाहते हो कि Android का **“Display over other apps” / “Appear on top”** वाला **सीधा system settings page** खुले, जहाँ apps की list आती है और user तुम्हारे app का toggle ON कर सके।
+
+Developer को यह prompt दो:
+
+````text
+# Fix: Direct "Display Over Other Apps" Permission Settings
+
+## Objective
+
+Fix the existing Smart Fill permission flow.
+
+When the user taps:
+
+"Start with Find"
+        ↓
+"Enable Permission"
+
+the application must NOT open:
+
+Settings → Apps → [App Name] → App Info
+
+Instead, it must open the Android system's dedicated:
+
+"Display over other apps"
+
+settings screen.
+
+The user should directly see the Android list of applications that can display over other apps and can enable the toggle for this application.
+
+---
+
+## Required User Flow
+
+Implement exactly:
+
+Start with Find
+        ↓
+Check overlay permission
+        ↓
+Permission NOT granted
+        ↓
+Show permission explanation
+        ↓
+User taps "Enable"
+        ↓
+Open Android "Display over other apps" settings
+        ↓
+User finds this application in the list
+        ↓
+User enables the toggle
+        ↓
+User returns to the application
+        ↓
+Application checks permission again
+        ↓
+Permission granted
+        ↓
+Continue Smart Fill setup
+
+---
+
+## IMPORTANT: Do NOT Open App Info
+
+Do NOT use an Intent that opens:
+
+Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+
+Do NOT navigate the user to:
+
+Settings
+→ Apps
+→ App Name
+→ App Info
+
+Do NOT use the application's App Info page as the overlay-permission screen.
+
+The current implementation that opens App Info must be removed/fixed.
+
+---
+
+## Android Intent Requirement
+
+For the "Display over other apps" permission, use the Android Settings action specifically intended for overlay-management settings.
+
+Preferred behavior:
+
+- Android versions that support the application-specific overlay settings → open the appropriate overlay-management screen.
+- Otherwise → fall back to the Android-wide "Display over other apps" settings/list.
+
+The implementation must use Android's official Settings Intent APIs rather than hardcoding a Settings URL or screen.
+
+Conceptually:
+
+```kotlin
+Settings.ACTION_MANAGE_OVERLAY_PERMISSION
+````
+
+may be used where the target Android version supports the required behavior.
+
+If the application-specific intent opens the app's details page on a particular Android version/device, use the appropriate Android-wide overlay settings action instead so the user reaches the actual:
+
+"Display over other apps"
+
+application list.
+
+The implementation must be tested on multiple Android versions because Settings UI behavior varies by manufacturer and Android version.
+
+---
+
+## Desired Screen
+
+The user should reach a system screen similar to:
+
+Display over other apps
+
+Search
+
+App 1                         OFF
+App 2                         OFF
+My Smart Fill App             OFF
+App 4                         OFF
+
+The user taps:
+
+My Smart Fill App
+
+and enables:
+
+Allow display over other apps
+
+OR, on devices where the system directly presents the app's overlay toggle, enable it there.
+
+---
+
+## Permission Verification
+
+Opening Settings does NOT mean permission was granted.
+
+When the user returns to the Flutter application:
+
+1. Check the actual overlay permission again.
+2. Do not rely on a stored boolean.
+3. Continue only if Android reports that overlay permission is currently granted.
+
+Conceptually:
+
+```kotlin
+Settings.canDrawOverlays(context)
+```
+
+Use the appropriate Android API for the project's minimum/target SDK.
+
+---
+
+## Flutter Architecture
+
+The Flutter button should call a native Android MethodChannel.
+
+Example:
+
+```text
+Flutter
+   ↓
+SmartFillPermissionManager
+   ↓
+MethodChannel
+   ↓
+Android Kotlin
+   ↓
+Overlay Settings Intent
+```
+
+Suggested method:
+
+```text
+openOverlayPermissionSettings
+```
+
+Flutter:
+
+```text
+Start with Find
+      ↓
+checkOverlayPermission()
+      ↓
+if false:
+    openOverlayPermissionSettings()
+```
+
+Android:
+
+```text
+openOverlayPermissionSettings()
+```
+
+opens the correct Android overlay-management Settings page.
+
+---
+
+## Return Flow
+
+When the user returns from Settings:
+
+```text
+App resumed
+    ↓
+checkOverlayPermission()
+    ↓
+Granted?
+   / \
+ Yes  No
+  |    |
+  ↓    ↓
+Continue  Show
+Smart Fill  "Permission still required"
+```
+
+Do NOT automatically assume success.
+
+---
+
+## User Interface
+
+Before opening Settings, show:
+
+### Enable Floating Permission
+
+"Smart Fill needs permission to display a small floating control while you use other apps."
+
+Button:
+
+```text
+[ Open Display Permission ]
+```
+
+After returning:
+
+If granted:
+
+```text
+✓ Floating permission enabled
+
+[Continue]
+```
+
+If not granted:
+
+```text
+⚠ Floating permission is still disabled.
+
+[Try Again]
+```
+
+---
+
+## Android Compatibility
+
+The developer must account for differences between:
+
+* Android versions
+* Samsung devices
+* Xiaomi devices
+* OnePlus devices
+* Vivo devices
+* Oppo devices
+* Realme devices
+* Pixel devices
+
+Do not assume every manufacturer presents Settings identically.
+
+The objective is always:
+
+**Take the user to the Android system's overlay/display-over-other-apps permission area, not generic App Info.**
+
+---
+
+## Acceptance Criteria
+
+The fix is complete only when:
+
+* [ ] Tapping "Start with Find" checks overlay permission.
+* [ ] If permission is missing, the user sees a clear explanation.
+* [ ] Tapping Enable opens Android's overlay permission Settings.
+* [ ] It does NOT open generic App Info.
+* [ ] It does NOT open `Settings → Apps → App Info`.
+* [ ] User can find the application in the Display over other apps list.
+* [ ] User can enable the overlay permission.
+* [ ] Returning to the app triggers a real permission check.
+* [ ] Smart Fill continues only after permission is actually granted.
+* [ ] If permission remains disabled, the app provides a Try Again option.
+* [ ] The implementation works across supported Android versions/manufacturers.
+* [ ] No hardcoded Settings UI paths are used.
+
+```
+
+**सबसे important line developer को यही समझानी है:** `ACTION_APPLICATION_DETAILS_SETTINGS` मत इस्तेमाल करना। Overlay के लिए Android की **overlay-management Settings intent** use करनी है, और device/version के हिसाब से fallback रखना है।
+```

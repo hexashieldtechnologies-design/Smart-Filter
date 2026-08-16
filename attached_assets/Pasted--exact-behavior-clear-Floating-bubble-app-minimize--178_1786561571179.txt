@@ -1,0 +1,1191 @@
+हाँ भाई, अब exact behavior clear है। **Floating bubble app minimize होने के बाद भी बना रहना चाहिए**, और bubble पर tap करने पर **सिर्फ 2 actions** दिखने चाहिए:
+
+1. **START / SMART FILL** → current webpage/form को scan करके local JSON data से fill करे
+2. **CLOSE** → floating bubble तुरंत बंद करे
+
+और app में वापस जाकर बंद करने का option भी रहे। नीचे वाला MD सीधे अपने coding agent को दे सकते हो।
+
+````md
+# FINAL FLOATING SMART FILL — ANDROID IMPLEMENTATION SPECIFICATION
+
+## Project Context
+
+Existing application:
+
+- React Native
+- Expo
+- TypeScript
+- Secure Vault
+- Local-first document storage
+- Local OCR
+- Deterministic document parser
+- Encrypted local JSON/profile storage
+- Smart Fill functionality
+
+DO NOT migrate to Flutter.
+
+This task is ONLY for the final Floating Smart Fill interaction and lifecycle.
+
+Do not redesign the entire application.
+
+---
+
+# 1. PRIMARY OBJECTIVE
+
+When the user starts Smart Fill and minimizes the application:
+
+THE FLOATING SMART FILL CONTROL MUST REMAIN VISIBLE.
+
+It must NOT disappear merely because:
+
+- The app is minimized
+- User presses Home
+- User switches to Chrome
+- User opens another supported browser
+- User switches between applications
+
+The floating control must remain active until:
+
+1. User explicitly presses CLOSE on the floating control, OR
+2. User returns to the main application and disables Smart Fill.
+
+---
+
+# 2. REQUIRED USER FLOW
+
+Exact expected flow:
+
+```text
+Secure Vault App
+       ↓
+START SMART FILL
+       ↓
+Request required permissions
+       ↓
+Permission granted
+       ↓
+Start Floating Smart Fill
+       ↓
+User minimizes application
+       ↓
+Floating circular button remains visible
+       ↓
+User opens Chrome
+       ↓
+User opens a supported form
+       ↓
+User taps floating button
+       ↓
+Two actions appear
+       ↓
+┌──────────────────────────────┐
+│ START / SMART FILL            │
+│ CLOSE FLOATING CONTROL        │
+└──────────────────────────────┘
+````
+
+ONLY TWO ACTIONS.
+
+Do not add unnecessary third/fourth buttons.
+
+---
+
+# 3. FLOATING BUTTON
+
+The main floating control should be:
+
+* Circular
+* Small
+* Easy to drag
+* Always visible while Smart Fill is active
+* Above normal application content
+* Non-blocking
+* Easy to tap
+* Visually consistent with the application's UI
+
+Example:
+
+```text
+        ┌───────┐
+        │  LOGO │
+        └───────┘
+```
+
+The user should clearly understand that this is the Smart Fill control.
+
+---
+
+# 4. FLOATING CONTROL LIFECYCLE
+
+State machine:
+
+```text
+IDLE
+ ↓
+START REQUESTED
+ ↓
+PERMISSION CHECK
+ ↓
+PERMISSION GRANTED
+ ↓
+FLOATING_ACTIVE
+ ↓
+APP MINIMIZED
+ ↓
+FLOATING_ACTIVE
+ ↓
+USER OPENS BROWSER
+ ↓
+FLOATING_ACTIVE
+```
+
+It should remain active until:
+
+```text
+FLOATING_ACTIVE
+      ↓
+CLOSE
+      ↓
+FLOATING_STOPPED
+```
+
+OR:
+
+```text
+FLOATING_ACTIVE
+      ↓
+User returns to Secure Vault
+      ↓
+Disable Smart Fill
+      ↓
+FLOATING_STOPPED
+```
+
+---
+
+# 5. IMPORTANT: MINIMIZE ≠ STOP
+
+Do NOT treat Android application minimization as a Smart Fill stop event.
+
+Incorrect:
+
+```text
+App minimized
+ ↓
+onPause()
+ ↓
+Stop floating control
+```
+
+This is NOT acceptable.
+
+The lifecycle must distinguish:
+
+```text
+Application paused/background
+```
+
+from:
+
+```text
+Smart Fill explicitly stopped
+```
+
+---
+
+# 6. ANDROID NATIVE FLOATING SERVICE
+
+For Android, use an appropriate native foreground-service architecture for the persistent floating control.
+
+The React Native layer should communicate with the native Android service through a native module/bridge.
+
+Conceptually:
+
+```text
+React Native
+     |
+     ↓
+SmartFillNativeModule
+     |
+     ↓
+Android Foreground Service
+     |
+     ↓
+Floating Overlay
+```
+
+The foreground service must be used only for the legitimate Smart Fill functionality.
+
+Do not create unnecessary background processing.
+
+---
+
+# 7. OVERLAY PERMISSION
+
+When user presses:
+
+```text
+START SMART FILL
+```
+
+check whether the required Android overlay permission is enabled.
+
+If not enabled:
+
+```text
+START SMART FILL
+       ↓
+Permission missing
+       ↓
+Open Android "Display over other apps"
+       ↓
+User selects application
+       ↓
+Enable permission
+       ↓
+Return to application
+       ↓
+Start floating control
+```
+
+Do NOT open generic:
+
+```text
+App Info
+```
+
+unless Android requires it for the specific permission flow.
+
+The preferred destination is the Android overlay permission/settings screen.
+
+---
+
+# 8. PERMISSION FLOW
+
+First check:
+
+```text
+Can application draw over other apps?
+```
+
+If:
+
+```text
+YES
+```
+
+then:
+
+```text
+Start Floating Smart Fill
+```
+
+If:
+
+```text
+NO
+```
+
+then:
+
+```text
+Open overlay permission settings
+```
+
+After returning:
+
+```text
+Re-check permission
+```
+
+Do not assume permission was granted.
+
+---
+
+# 9. FLOATING BUTTON TAP
+
+When the user taps the circular floating button:
+
+DO NOT immediately execute Smart Fill.
+
+Instead show exactly two controls:
+
+```text
+┌─────────────────────────┐
+│  START SMART FILL       │
+│  CLOSE                  │
+└─────────────────────────┘
+```
+
+No third button.
+
+No settings button.
+
+No upload button.
+
+No document button.
+
+No unnecessary menu.
+
+---
+
+# 10. START SMART FILL BUTTON
+
+When user taps:
+
+```text
+START SMART FILL
+```
+
+the system should initiate the Smart Fill operation.
+
+Expected flow:
+
+```text
+START SMART FILL
+       ↓
+Detect supported current webpage/form
+       ↓
+Read supported form/DOM metadata
+       ↓
+Identify fields
+       ↓
+Load encrypted local profile JSON
+       ↓
+Map fields
+       ↓
+Validate values
+       ↓
+Fill supported fields
+```
+
+---
+
+# 11. DO NOT RUN OCR AGAIN
+
+The document has already been analyzed when the user originally uploaded it.
+
+Example:
+
+```text
+Aadhaar upload
+      ↓
+Local OCR
+      ↓
+Parser
+      ↓
+Structured JSON
+      ↓
+Encrypted local vault
+```
+
+Later:
+
+```text
+Website
+ ↓
+Smart Fill
+ ↓
+Read local JSON
+ ↓
+Map fields
+ ↓
+Fill
+```
+
+DO NOT:
+
+```text
+Website
+ ↓
+Smart Fill
+ ↓
+Open Aadhaar image
+ ↓
+Run OCR again
+```
+
+unless the user explicitly requests document analysis.
+
+---
+
+# 12. JSON AS SOURCE OF TRUTH
+
+Use the locally stored structured profile/document JSON.
+
+Example:
+
+```json
+{
+  "profile": {
+    "fullName": "USER NAME",
+    "dateOfBirth": "01/01/2000",
+    "gender": "Male",
+    "phone": "XXXXXXXXXX",
+    "email": "user@example.com"
+  },
+  "documents": {
+    "aadhaar": {
+      "number": "XXXXXXXXXXXX"
+    },
+    "pan": {
+      "number": "ABCDE1234F"
+    }
+  },
+  "address": {
+    "line1": "Example Address",
+    "city": "Example City",
+    "district": "Example District",
+    "state": "Example State",
+    "pincode": "000000"
+  }
+}
+```
+
+The actual implementation must use the application's encrypted local storage.
+
+Do not store sensitive JSON in plaintext.
+
+---
+
+# 13. HTML / FORM ANALYSIS
+
+The START SMART FILL action must analyze the supported webpage/form.
+
+Recognize available field metadata such as:
+
+```text
+name
+id
+type
+placeholder
+label
+aria-label
+autocomplete
+fieldset
+legend
+nearby text
+```
+
+Example:
+
+```html
+<label>Full Name</label>
+<input name="full_name">
+```
+
+Map:
+
+```text
+full_name
+      ↓
+profile.fullName
+      ↓
+USER NAME
+```
+
+---
+
+# 14. SMART FIELD MAPPING
+
+Use deterministic mapping first.
+
+Example mappings:
+
+```text
+full_name
+name
+fullname
+applicant_name
+      ↓
+profile.fullName
+```
+
+```text
+dob
+date_of_birth
+birth_date
+      ↓
+profile.dateOfBirth
+```
+
+```text
+mobile
+phone
+phone_number
+contact_number
+      ↓
+profile.phone
+```
+
+```text
+pan
+pan_number
+permanent_account_number
+      ↓
+documents.pan.number
+```
+
+```text
+aadhaar
+aadhaar_number
+uid
+uidai_number
+      ↓
+documents.aadhaar.number
+```
+
+---
+
+# 15. CONFIDENCE / SAFETY
+
+Never blindly fill an ambiguous field.
+
+If field meaning is uncertain:
+
+```text
+DO NOT GUESS.
+```
+
+Example:
+
+```text
+"ID Number"
+```
+
+could mean:
+
+* Aadhaar
+* PAN
+* Passport
+* Driving Licence
+* Application ID
+
+Do not automatically choose a document without enough context.
+
+---
+
+# 16. SENSITIVE FIELDS
+
+Sensitive fields must have appropriate user control.
+
+Examples:
+
+```text
+Aadhaar
+PAN
+Passport
+Bank information
+```
+
+The Smart Fill system should not silently disclose sensitive data to an unrelated form.
+
+Use context and explicit user confirmation where necessary.
+
+---
+
+# 17. DOCUMENT UPLOAD FIELD
+
+If the webpage contains a supported file upload field:
+
+```html
+<input type="file">
+```
+
+and the surrounding form clearly identifies:
+
+```text
+Upload Aadhaar
+```
+
+then:
+
+```text
+Detect Aadhaar upload field
+        ↓
+Find local Aadhaar document
+        ↓
+Ask user confirmation if required
+        ↓
+Use supported platform/browser file mechanism
+```
+
+Do not automatically upload a sensitive document without user control.
+
+---
+
+# 18. DO NOT BYPASS SECURITY
+
+Smart Fill MUST NOT bypass:
+
+```text
+CAPTCHA
+OTP
+Password
+CVV
+UPI PIN
+2FA
+Security verification
+Payment authorization
+```
+
+These must remain manual.
+
+---
+
+# 19. DO NOT AUTO-SUBMIT
+
+After filling:
+
+```text
+STOP.
+```
+
+Do not automatically click:
+
+```text
+Submit
+Pay
+Confirm
+Continue payment
+Final submission
+```
+
+User must review and submit manually.
+
+---
+
+# 20. CLOSE BUTTON
+
+When user taps:
+
+```text
+CLOSE
+```
+
+the floating control must immediately disappear.
+
+Flow:
+
+```text
+Floating Button
+      ↓
+Tap
+      ↓
+CLOSE
+      ↓
+Stop Smart Fill foreground service
+      ↓
+Remove overlay
+      ↓
+Clear active floating state
+```
+
+The user should NOT have to reopen the main app.
+
+---
+
+# 21. APP-SIDE STOP CONTROL
+
+The main application must also have:
+
+```text
+Smart Fill: ON/OFF
+```
+
+Example:
+
+```text
+Smart Fill
+[ ON ]
+```
+
+When user switches it OFF:
+
+```text
+React Native
+      ↓
+Native bridge
+      ↓
+Stop foreground service
+      ↓
+Remove floating overlay
+```
+
+The floating button must disappear immediately.
+
+---
+
+# 22. APP REOPEN BEHAVIOR
+
+If Smart Fill is active:
+
+```text
+User minimizes app
+      ↓
+Floating remains
+```
+
+If user reopens the app:
+
+```text
+Smart Fill status = ON
+```
+
+The app should accurately reflect that the floating service is still running.
+
+If the user disables it:
+
+```text
+Smart Fill = OFF
+```
+
+Floating control disappears.
+
+---
+
+# 23. SERVICE RECOVERY
+
+If Android terminates the service because of memory pressure:
+
+DO NOT silently pretend that Smart Fill is still active.
+
+The app must detect the actual service state.
+
+Display:
+
+```text
+Smart Fill is no longer active.
+Start again?
+```
+
+The application must report the real state.
+
+---
+
+# 24. LOW MEMORY BEHAVIOR
+
+The floating service must remain lightweight.
+
+Do NOT run:
+
+```text
+OCR continuously
+AI inference continuously
+Screen capture continuously
+HTML scanning continuously
+```
+
+The service should primarily maintain the floating control and perform Smart Fill only when requested.
+
+---
+
+# 25. PERFORMANCE
+
+Target:
+
+```text
+Floating button appearance:
+< 1 second
+
+Floating button tap:
+< 200 ms
+
+Menu appearance:
+< 200 ms
+
+Existing JSON loading:
+~10–100 ms
+
+Simple form analysis:
+~100–500 ms
+
+Simple form filling:
+~200–1000 ms
+```
+
+These are engineering targets, NOT guaranteed measurements.
+
+Actual performance must be benchmarked on real devices.
+
+---
+
+# 26. NO CONTINUOUS HTML SCANNING
+
+Do NOT continuously scan Chrome pages.
+
+Only perform webpage/form analysis after:
+
+```text
+User taps START SMART FILL
+```
+
+This reduces:
+
+* CPU usage
+* memory usage
+* battery usage
+* unnecessary processing
+
+---
+
+# 27. FLOATING UI DESIGN
+
+The floating control should follow the application's existing visual language.
+
+Recommended:
+
+```text
+Circular
+Subtle shadow
+Smooth press animation
+Small footprint
+High contrast
+Drag support
+```
+
+Do not make it occupy a large portion of the screen.
+
+---
+
+# 28. ACCESSIBILITY
+
+Floating control must support:
+
+* Content description
+* Screen-reader label
+* Minimum touch target
+* Clear visual state
+* Start/active/closed state
+
+Example content descriptions:
+
+```text
+"Smart Fill"
+"Start Smart Fill"
+"Close Smart Fill"
+```
+
+---
+
+# 29. ANDROID BACKGROUND RESTRICTIONS
+
+Account for Android background execution restrictions.
+
+Do not rely only on:
+
+```text
+setTimeout
+JavaScript background timers
+React component state
+```
+
+for persistence after app minimization.
+
+The persistent floating control must be owned by the appropriate Android native service.
+
+---
+
+# 30. REACT NATIVE ↔ NATIVE STATE
+
+Maintain one source of truth for the service state.
+
+Possible states:
+
+```text
+STOPPED
+STARTING
+ACTIVE
+STOPPING
+ERROR
+```
+
+React Native UI must query the native service state rather than assuming it.
+
+---
+
+# 31. ERROR HANDLING
+
+If overlay permission is denied:
+
+```text
+Smart Fill cannot start.
+Please enable "Display over other apps".
+```
+
+If service cannot start:
+
+```text
+Unable to start Smart Fill.
+Please try again.
+```
+
+If webpage/form cannot be analyzed:
+
+```text
+This form is not supported.
+```
+
+Do not silently fail.
+
+---
+
+# 32. FINAL UX
+
+### Main application
+
+```text
+┌────────────────────────────┐
+│        SECURE VAULT        │
+│                            │
+│                            │
+│     START SMART FILL       │
+│                            │
+└────────────────────────────┘
+```
+
+After start:
+
+```text
+┌────────────────────────────┐
+│        SECURE VAULT        │
+│                            │
+│     Smart Fill: ON         │
+│                            │
+└────────────────────────────┘
+
+                    ◉
+              Floating button
+```
+
+User minimizes app:
+
+```text
+Chrome
+┌────────────────────────────┐
+│        WEBSITE FORM        │
+│                            │
+│ Name: _____________        │
+│ Phone: ____________        │
+│ Email: ____________        │
+│                            │
+└────────────────────────────┘
+
+                    ◉
+```
+
+Tap floating button:
+
+```text
+             ┌─────────────────┐
+             │ START SMART FILL │
+             ├─────────────────┤
+             │ CLOSE            │
+             └─────────────────┘
+```
+
+ONLY TWO OPTIONS.
+
+---
+
+# 33. IMPORTANT INTERACTION RULE
+
+Do NOT create:
+
+```text
+START
+PAUSE
+SCAN HTML
+CLOSE
+SETTINGS
+DOCUMENTS
+```
+
+The final floating menu must contain ONLY:
+
+```text
+1. START SMART FILL
+2. CLOSE
+```
+
+"START SMART FILL" internally performs:
+
+```text
+Detect supported webpage
++
+Analyze supported form
++
+Read local JSON
++
+Map fields
++
+Fill fields
+```
+
+Therefore a separate "SCAN HTML" button is NOT required.
+
+---
+
+# 34. FINAL ACCEPTANCE TEST
+
+Test exactly:
+
+### Test 1
+
+```text
+Open Secure Vault
+ ↓
+Start Smart Fill
+ ↓
+Grant overlay permission
+ ↓
+Floating button appears
+```
+
+PASS if floating button appears.
+
+### Test 2
+
+```text
+Minimize Secure Vault
+ ↓
+Open Chrome
+```
+
+PASS if floating button remains visible.
+
+### Test 3
+
+```text
+Tap floating button
+```
+
+PASS if exactly two options appear:
+
+```text
+START SMART FILL
+CLOSE
+```
+
+### Test 4
+
+```text
+Tap CLOSE
+```
+
+PASS if floating button immediately disappears.
+
+### Test 5
+
+```text
+Start Smart Fill again
+ ↓
+Open supported form
+ ↓
+Tap floating button
+ ↓
+START SMART FILL
+```
+
+PASS if supported fields are analyzed and local JSON values are mapped/fillable.
+
+### Test 6
+
+```text
+Return to Secure Vault
+ ↓
+Turn Smart Fill OFF
+```
+
+PASS if floating button disappears.
+
+### Test 7
+
+```text
+Minimize app
+ ↓
+Wait
+ ↓
+Open another app
+```
+
+PASS if floating control remains while Smart Fill is ON.
+
+---
+
+# 35. DEFINITION OF DONE
+
+This feature is complete only when:
+
+* [ ] Floating button survives app minimization
+* [ ] Floating button survives switching to Chrome
+* [ ] Overlay permission opens the correct Android settings destination
+* [ ] Permission is rechecked after returning
+* [ ] Native service owns persistent floating control
+* [ ] Floating control is lightweight
+* [ ] Tapping floating control shows exactly TWO options
+* [ ] START SMART FILL performs the complete scan/fill flow
+* [ ] CLOSE immediately removes floating control
+* [ ] App-side OFF also removes floating control
+* [ ] JSON is used instead of re-running OCR
+* [ ] No continuous HTML scanning
+* [ ] No continuous OCR
+* [ ] No automatic CAPTCHA/OTP/payment bypass
+* [ ] No automatic form submission
+* [ ] Errors are clearly displayed
+* [ ] Native service state and React Native UI stay synchronized
+* [ ] Behavior tested on an actual Android device
+
+---
+
+# FINAL EXPECTED BEHAVIOR
+
+The final system must behave like:
+
+```text
+START SMART FILL
+       ↓
+Permission
+       ↓
+Floating button
+       ↓
+MINIMIZE APP
+       ↓
+Floating button STAYS
+       ↓
+OPEN CHROME
+       ↓
+Open form
+       ↓
+Tap floating button
+       ↓
+┌───────────────────┐
+│ START SMART FILL  │
+│ CLOSE             │
+└───────────────────┘
+       ↓
+START SMART FILL
+       ↓
+Analyze supported form
+       ↓
+Read encrypted local JSON
+       ↓
+Map fields
+       ↓
+Fill supported fields
+       ↓
+STOP
+       ↓
+User reviews
+       ↓
+User manually submits
+```
+
+The floating control must never disappear simply because the main application was minimized.
+
+Only an explicit CLOSE action or Smart Fill OFF action should stop it.
+
+```
+
+**यही तुम्हारे बताए हुए final behavior के हिसाब से है:** कोई अलग **“HTML Scan”** button नहीं रखा है—**START SMART FILL ही scan + JSON mapping + fill का पूरा action है**, इसलिए floating menu साफ और सिर्फ दो options वाला रहेगा।
+```

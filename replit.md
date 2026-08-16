@@ -43,7 +43,7 @@ Secure Vault keeps identity documents organized and helps users complete support
 
 ## User preferences
 
-No additional preferences recorded.
+- Do not build an Android APK unless the user explicitly requests the APK build after the requested updates are complete.
 
 ## Gotchas
 

@@ -1,1 +1,7 @@
 - [Smart Fill platform boundary](smart-fill-platform-boundary.md) — keep controlled in-app forms separate from native Android overlay/browser integrations.
+- [Smart Fill accessibility accounting](smart-fill-accessibility-field-accounting.md) — count unique visible semantic controls and verify/fallback-fill controlled WebView inputs.
+- [Android release build quirk](android-release-build-quirk.md) — release CMake builds may need PerfData disabled, cache cleanup, and arm64-only packaging.
+- [Local-first mobile AI boundary](local-first-mobile-ai-boundary.md) — keep document OCR/parser on-device; do not sync vault metadata or sensitive data to the API.
+- [Android Autofill boundary](android-autofill-boundary.md) — use Android Autofill for credential values and keep Accessibility limited to approved non-password fields.
+- [MCP agent bridge boundary](mcp-agent-bridge-boundary.md) — expose scoped vault data through local MCP; browser filling requires a paired, origin-bound bridge and approval.
+- [Android deep-link handoff](android-deep-link-handoff.md) — singleTask activity actions from the native overlay must refresh the activity intent before Expo Router can process them.

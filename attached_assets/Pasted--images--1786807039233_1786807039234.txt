@@ -1,0 +1,34 @@
+देखो भाई, मैं जो बोल रहा हूँ वह करो। ठीक है? जैसे कि अभी दो images दिए हैं, उसमें क्या हो रहा है? जैसे कि मैंने start कर दिया floating, ठीक है? तो दो floating खुल रहे हैं। पुराना वाला floating हटा दो। ठीक है? जो नया floating बनाया था तुमने, वह जो अभी image में दिया हूँ, उसमें क्या दिक्कत हो रही है, बता रहा हूँ। जैसे कि app minimize कर दिया तो वह floating app बंद हो जा रहा है। और अब एक दिक्कत बता रहा हूँ। देखो! मतलब वह बंद न हो, उसमें permission तो दे दिया है। वह क्या बोलते हैं? Allow display वाला। app को बंद भी कर दिया, हटा दिया तो भी वह floating properly दिखना चाहिए। ठीक है? जब तक उसको close करके button न दबा दे, उधर app के round button को पकड़ के रखेगा ना, तब उधर close वाला into mark option आना चाहिए। ठीक है? Normally यह एक बार click करे तो into mark आ रहा है, तब नया floating खुलता है ना, वह बंद होना चाहिए। वह बड़ा वाला round वाले को ही हटाना है तो उस पर पकड़ के रखना है। ठीक है? ऐसे logic बनाओ। और जैसे कि मैंने Aadhar card upload किया तो मैंने AI को Aadhar card को scan करके JSON format में save करने के लिए बोला था। ठीक है? API भी दे दिया था। वह proper work नहीं कर रहा। मतलब क्या बोलूं? गलत details add कर रहा है। ठीक है? जैसे कि मैंने Aadhar card upload किया तो मेरा data birthday गलत है और Aadhar card number भी गलत है। सब कुछ गलत आ रहा है। उसको रखो। जैसे कि documents मैं upload करूंगा तो उसको देख कर इधर जो मेरे personal details रहते हैं, ना, उधर सारे details fill up हो जाने चाहिए। ठीक है? जो भी मैं document दूंगा उसके according सारी details properly fill up हो जानी चाहिए। जैसे कि मैंने अभी Aadhar card दिया तो Aadhar card में जो name हो या हर एक चीज properly fill up हो जाना चाहिए। full name, half name वह सब कुछ है ना उधर। ऐसे। ठीक है? और- और क्या है? जैसे कि मैं document upload करने जा रहा हूँ, तो कुछ files वाला error आ जा रहा है। क्योंकि मैंने fingerprint और password पूछना लगा था। जैसे मैं files upload करने जा रहा हूँ, तो वापस से fingerprint पूछ दे रहा है। fingerprint को जब app open करेंगे, तभी एक बार पूछना चाहिए और मैं minimize करूँगा, वापस आऊँगा, तो बार-बार पूछ रहा है। एक ही बार, मतलब उसको minimize से हटा देंगे ना, फिर app खोलेंगे तब पूछना है। एक ही बार में, एक बार पूछना है। मैं minimize करके फिर खोलूँगा, तो नहीं पूछना चाहिए। उसका logic एक fix कर दो और क्या दिक्कत आ रहा है? उतना ही है। पूरे fix करके मेरे को एक APK build करके दे दो properly। ठीक है।
+
+24 minutes ago
+मैं Secure Vault के Android हिस्से में तीन चीज़ें ठीक करूँगा: एक ही floating bubble रखना और उसे app minimize/close के बाद भी चलाए रखना, biometric को केवल नए app session पर पूछना, और document OCR/field mapping को अधिक भरोसेमंद बनाना। इसके बाद source और APK दोनों build करके जाँचूँगा।
+
+
+
+45 actions
+मैंने समस्या का कारण पकड़ लिया है: Android वाला native bubble foreground service से अलग है, लेकिन app के अंदर पुराना दूसरा floating control भी render हो रहा है; इसलिए दोनों दिखते हैं। साथ ही biometric lifecycle हर बार background से active होने पर lock कर रहा है, और Aadhaar parser बिना label के पहली 12-digit/date match उठा रहा है। अब native bubble को single source बनाकर, session lifecycle और OCR validation दोनों ठीक कर रहा हूँ।
+
+
+
+24 actions
+Native overlay का lifecycle अब sticky किया है और task हटाने पर भी service को stop नहीं होने दिया। Menu खुलने पर bubble अब × दिखाएगा, और केवल menu का explicit CLOSE action session/service बंद करेगा। अगला बदलाव OCR को “पहली match” से हटाकर label-aware, date-valid और document-aware parser बनाएगा।
+
+
+
+18 actions
+TypeScript और diff validation अब पास हैं। Native code अभी Android release build से verify कर रहा हूँ; इसके बाद अगर Gradle compile में कोई platform-specific issue आएगा तो उसी build output के आधार पर fix करूँगा, फिर APK को workspace artifact के रूप में present करूँगा।
+
+
+
+18 actions
+पहला Gradle run timeout हुआ क्योंकि CMake/JS bundle build 5 मिनट से अधिक ले रहा था, लेकिन APK output मौजूद था। Long-press behavior के अंतिम native बदलाव के बाद मैं build को background में पूरा चलाकर उसके वास्तविक exit status और APK timestamp/hash verify कर रहा हूँ—सिर्फ पुराने output पर भरोसा नहीं करूँगा।
+
+
+
+10 actions
+Native Kotlin compilation अब सफल है; OCR और overlay code compile हो चुके हैं। अब उसी release variant का अंतिम assembleRelease चला रहा हूँ ताकि APK में long-press और latest JS bundle दोनों शामिल हों, फिर artifact metadata और checksum verify करूँगा।
+
+
+
+1 action
+You've reached your monthly free quota limit. It will reset on August 30, 2026.

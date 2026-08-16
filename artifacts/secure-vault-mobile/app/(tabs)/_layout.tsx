@@ -17,13 +17,13 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="documents">
         <Icon sf={{ default: 'folder', selected: 'folder.fill' }} />
-        <Label>Vault</Label>
+        <Label>Wallet</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="smart-fill">
+       <NativeTabs.Trigger name="smart-fill">
         <Icon sf={{ default: 'wand.and.stars', selected: 'wand.and.stars.inverse' }} />
         <Label>Smart Fill</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="activity">
+       <NativeTabs.Trigger name="activity">
         <Icon sf={{ default: 'clock', selected: 'clock.fill' }} />
         <Label>Activity</Label>
       </NativeTabs.Trigger>
@@ -61,7 +61,7 @@ function ClassicTabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => isIOS ? <SymbolView name="house" tintColor={color} size={23} /> : <Feather name="home" size={21} color={color} /> }} />
-      <Tabs.Screen name="documents" options={{ title: 'Vault', tabBarIcon: ({ color }) => isIOS ? <SymbolView name="folder" tintColor={color} size={23} /> : <Feather name="folder" size={21} color={color} /> }} />
+      <Tabs.Screen name="documents" options={{ title: 'Wallet', tabBarIcon: ({ color }) => isIOS ? <SymbolView name="folder" tintColor={color} size={23} /> : <Feather name="folder" size={21} color={color} /> }} />
       <Tabs.Screen name="smart-fill" options={{ title: 'Smart Fill', tabBarIcon: ({ color }) => isIOS ? <SymbolView name="wand.and.stars" tintColor={color} size={23} /> : <Feather name="edit-3" size={21} color={color} /> }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity', tabBarIcon: ({ color }) => isIOS ? <SymbolView name="clock" tintColor={color} size={23} /> : <Feather name="clock" size={21} color={color} /> }} />
     </Tabs>

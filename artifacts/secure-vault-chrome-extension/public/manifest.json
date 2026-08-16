@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Secure Vault Smart Fill",
+  "version": "1.0.0",
+  "description": "User-controlled form filling from an encrypted local identity vault.",
+  "action": {
+    "default_title": "Secure Vault Smart Fill",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "optional_permissions": [
+    "sidePanel",
+    "notifications"
+  ],
+  "host_permissions": [],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "options_page": "options.html"
+}

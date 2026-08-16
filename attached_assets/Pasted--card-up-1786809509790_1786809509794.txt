@@ -1,0 +1,59 @@
+देखो भाई, तुमने बहुत ज्यादा गड़बड़ कर दिया है। ठीक है, क्या बोलूं यार मैं वापस से तुमको आधार card upload होते ही, उधर एक button दिख रहा है, Convert into JSON format. ठीक है? उस पर click करते ही scan होना चाहिए। जैसे कि आधार पर click किया और document के नीचे उधर वो रहना चाहिए। नहीं तो अपने आप ही जैसे upload करते ही JSON format में convert हो जाना चाहिए। और तुमने जैसे कि मैंने start filter पर button लगाया था, ठीक है? मतलब एक button रखने के लिए बोला था, लेकिन रखा है एक button, लेकिन जो दूसरा button है, मुझे उस button को रखना था, इस button को हटाना था। reverse कर दिया तुमने। मैं एक image दे रहा हूँ, उसको draw करके दे रहा हूँ, जहाँ update करना है, ठीक है properly. देखो भाई, मैंने image दिया है ना, जो green color में है वह मेरे को floating चाहिए। ठीक है। उसको floating में permission दे दो। जैसे कि मैं app को minimize करूंगा तो भी दिखना चाहिए और मैं app को हटा दूंगा तो भी दिखना चाहिए floating. ठीक है। नीचे वाले को red color में जो track है उसको हटा दो। ठीक है। समझ गए होगे। और क्या दिक्कत है? और कुछ नहीं है APK build करके zip file के अंदर add करके दे देना। ठीक है।
+
+13 minutes ago
+समझ गया। मैं आपके दिए screenshot के हिसाब से Smart Fill screen को ठीक कर रहा हूँ: नीचे वाला लाल-marked in-app floating/track हटेगा, केवल green-style floating control रहेगा, और Aadhaar upload के बाद Convert into JSON format action document के नीचे दिखेगा या upload के बाद analysis शुरू होगा। फिर नया APK ZIP में पैक करूँगा।
+
+
+
+4 actions
+मैं अब screenshot में mark किए गए दो हिस्सों को code से मिलाकर देख रहा हूँ: नीचे का extra in-app control कहाँ render हो रहा है और Aadhaar upload के बाद document analysis action कहाँ रखा जाना चाहिए। इसके बाद सीधे targeted बदलाव करूँगा।
+
+
+
+18 actions
+अब मैं तीन targeted बदलाव कर रहा हूँ: native green menu को screenshot वाले Files / Analyze Screenshot / Start Fill Up / Close actions में बदलना, नीचे का extra in-app track हटाना, और document detail में working Convert into JSON format scan button जोड़ना।
+
+
+
+5 actions
+मुख्य UI और native menu बदलाव लागू हो गए हैं। अब मैं TypeScript check चला रहा हूँ और deep-link actions/JSON button के आसपास के compile issues पकड़कर ठीक करूँगा, उसके बाद Android release rebuild होगा।
+
+
+
+4 actions
+TypeScript ने दो छोटे integration issues पकड़े: पुराना in-app toggle reference और context method का return type। इन्हें अभी साफ करके फिर check दोबारा चलाता हूँ।
+
+
+
+4 actions
+TypeScript check अब सफल है। मैं current Kotlin + JS बदलावों से नया arm64 APK package कर रहा हूँ; पहले से बने CMake outputs reuse करूँगा ताकि build समय सीमा में पूरा हो सके।
+
+
+
+10 actions
+Build सफल है और नया Expo workflow भी cleanly चल रहा है। अब मैं release version को 1.0.12/code 13 पर bump करके final APK और ZIP तैयार करूँगा, फिर signature, ABI, metadata और hashes verify करूँगा।
+
+
+
+Show less
+
+Edited app.json
+
+Edited build.gradle
+
+Ran gradlew
+Verifying package output
+
+Verifying package output
+
+Extracted an archive
+
+Found files
+
+Ran stat
+Inspecting document issue
+
+Inspecting document issue
+
+Opened [id].tsx
+You've reached your daily free quota limit. It will reset at 12:00 AM UTC.

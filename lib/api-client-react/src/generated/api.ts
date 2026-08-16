@@ -22,6 +22,8 @@ import type {
 import type {
   HealthStatus,
   ListVaultDocumentsParams,
+  SmartFillScreenshotAnalysis,
+  SmartFillScreenshotInput,
   VaultDocument,
   VaultDocumentDeleteInput,
   VaultDocumentInput
@@ -358,5 +360,76 @@ export const useDeleteVaultDocument = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteVaultDocumentMutationOptions(options));
+    }
+
+export const getAnalyzeSmartFillScreenshotUrl = () => {
+
+
+
+
+  return `/api/smart-fill/analyze-screenshot`
+}
+
+/**
+ * @summary Analyze a screenshot and return a reviewable paste plan
+ */
+export const analyzeSmartFillScreenshot = async (smartFillScreenshotInput: SmartFillScreenshotInput, options?: Parameters<typeof customFetch>[1]): Promise<SmartFillScreenshotAnalysis> => {
+
+  return customFetch<SmartFillScreenshotAnalysis>(getAnalyzeSmartFillScreenshotUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(smartFillScreenshotInput)
+  }
+);}
+
+
+
+
+
+export const getAnalyzeSmartFillScreenshotMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeSmartFillScreenshot>>, TError,{data: BodyType<SmartFillScreenshotInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeSmartFillScreenshot>>, TError,{data: BodyType<SmartFillScreenshotInput>}, TContext> => {
+
+const mutationKey = ['analyzeSmartFillScreenshot'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeSmartFillScreenshot>>, {data: BodyType<SmartFillScreenshotInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  analyzeSmartFillScreenshot(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeSmartFillScreenshotMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeSmartFillScreenshot>>>
+    export type AnalyzeSmartFillScreenshotMutationBody = BodyType<SmartFillScreenshotInput>
+    export type AnalyzeSmartFillScreenshotMutationError = ErrorType<void>
+
+    /**
+ * @summary Analyze a screenshot and return a reviewable paste plan
+ */
+export const useAnalyzeSmartFillScreenshot = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeSmartFillScreenshot>>, TError,{data: BodyType<SmartFillScreenshotInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeSmartFillScreenshot>>,
+        TError,
+        {data: BodyType<SmartFillScreenshotInput>},
+        TContext
+      > => {
+      return useMutation(getAnalyzeSmartFillScreenshotMutationOptions(options));
     }
 

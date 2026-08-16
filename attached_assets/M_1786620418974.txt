@@ -1,0 +1,1315 @@
+हाँ भाई, समझ गया। यहाँ असली समस्या **clipboard/paste logic पर ज़्यादा depend करना** है। खासकर email/password और आपके अपने app के text fields में सिर्फ `Clipboard.setString()` करके छोड़ देना reliable नहीं है।
+
+इसके लिए AI coding agent को यह prompt दो:
+
+# Secure Smart Fill — Email, Password & In-App Text Input Fix
+
+## Objective
+
+Fix the existing Smart Fill implementation so that:
+
+1. Email fields are filled reliably.
+2. Password fields are filled reliably.
+3. Profile data is loaded from the existing local encrypted profile.
+4. Login forms can use saved email + password.
+5. The app's own input fields accept profile data correctly.
+6. Do not depend on clipboard as the primary filling mechanism.
+7. Do not store passwords in plaintext.
+8. Do not require biometric authentication repeatedly while filling multiple fields.
+9. Preserve the existing local-first architecture.
+10. Do not send credentials to any backend/server.
+
+---
+
+## 1. Root Cause
+
+The current implementation appears to behave like:
+
+```text
+JSON
+ ↓
+Clipboard
+ ↓
+Paste
+```
+
+This is unreliable.
+
+Replace it with:
+
+```text
+Encrypted Local Profile
+        ↓
+Credential/Field Resolver
+        ↓
+Target Field Detection
+        ↓
+Native/System Autofill where available
+        ↓
+Direct native field update
+        ↓
+Value verification
+```
+
+Clipboard should only be a **fallback**, never the primary mechanism.
+
+---
+
+# 2. Canonical Profile
+
+The existing local profile must remain the single source of truth.
+
+Example:
+
+```json
+{
+  "profile": {
+    "fullName": "USER_NAME",
+    "email": "USER_EMAIL",
+    "phone": "USER_PHONE"
+  },
+  "credentials": {
+    "accounts": [
+      {
+        "domain": "example.com",
+        "username": "USER_EMAIL",
+        "passwordRef": "secure://credential/example"
+      }
+    ]
+  }
+}
+```
+
+Do NOT store:
+
+```json
+{
+  "password": "actual-password"
+}
+```
+
+inside ordinary JSON or AsyncStorage/plain SQLite.
+
+The actual password must remain inside encrypted secure credential storage.
+
+---
+
+# 3. Password Storage
+
+Password requirements:
+
+```text
+Password
+ ↓
+Encrypt
+ ↓
+Secure local storage
+ ↓
+Key protected by Android Keystore / iOS Keychain
+```
+
+The password must never be:
+
+* logged
+* printed to console
+* included in analytics
+* included in crash reports
+* sent to API
+* stored in plaintext JSON
+* stored in clipboard permanently
+* displayed in UI logs
+
+---
+
+# 4. Add Account Profile
+
+The Add Profile screen should support:
+
+```text
+Personal Information
+--------------------
+Full Name
+Email
+Phone
+Address
+...
+
+Login Credentials
+-----------------
+Website / App
+Username / Email
+Password
+```
+
+Example UI:
+
+```text
+Website
+[ example.com ]
+
+Email / Username
+[ user@example.com ]
+
+Password
+[ •••••••••••• ]
+
+[ Save Securely ]
+```
+
+After save:
+
+```text
+Credentials saved securely ✓
+```
+
+Never show the actual password in the confirmation message.
+
+---
+
+# 5. Domain-Based Credential Matching
+
+When Smart Fill encounters:
+
+```text
+https://example.com/login
+```
+
+normalize:
+
+```text
+example.com
+```
+
+Then search local credential records.
+
+Example:
+
+```text
+Current domain:
+example.com
+
+Stored:
+example.com
+
+MATCH
+```
+
+Only use credentials belonging to the appropriate app/site/service.
+
+Do NOT blindly use the same password for every website.
+
+---
+
+# 6. Email Field Detection
+
+Email fields can appear as:
+
+```text
+Email
+Email Address
+E-mail
+Username
+Login
+User ID
+Account Email
+Email ID
+```
+
+Use multiple signals:
+
+```text
+autocomplete
+name
+id
+type
+placeholder
+label
+aria-label
+accessibility text
+```
+
+Normalize the field before matching.
+
+Example:
+
+```json
+{
+  "fieldType": "email",
+  "semanticType": "email",
+  "confidence": 0.98
+}
+```
+
+Then:
+
+```text
+semanticType=email
+        ↓
+profile.email
+```
+
+---
+
+# 7. Password Field Detection
+
+Recognize:
+
+```text
+<input type="password">
+```
+
+as:
+
+```text
+semanticType=password
+```
+
+Also inspect:
+
+```text
+autocomplete="current-password"
+autocomplete="new-password"
+name="password"
+id="password"
+```
+
+Do NOT fill a password field with the email.
+
+---
+
+# 8. Login Form Detection
+
+When Smart Fill sees:
+
+```text
+Email
+Password
+Login / Sign in
+```
+
+classify it as:
+
+```text
+LOGIN_FORM
+```
+
+Example:
+
+```text
+Email field
+     ↓
+profile.email
+
+Password field
+     ↓
+secure credential for current domain
+```
+
+---
+
+# 9. Password Must Require User Authorization
+
+Before releasing a stored password to another app/site:
+
+```text
+Smart Fill
+    ↓
+Detect login form
+    ↓
+Find matching credential
+    ↓
+Request biometric/device authentication if required
+    ↓
+Unlock credential
+    ↓
+Fill username
+    ↓
+Fill password
+    ↓
+Verify
+```
+
+Do not repeatedly ask:
+
+```text
+Fingerprint?
+Fingerprint?
+Fingerprint?
+```
+
+for every field.
+
+Authenticate once for the credential-fill operation/session, then use the unlocked credential only for the current operation.
+
+Android's Autofill framework specifically supports authentication before sensitive datasets are provided. ([Android Developers][1])
+
+---
+
+# 10. Android Implementation
+
+For Android, do NOT make clipboard-based filling the primary credential mechanism.
+
+Implement an Android native:
+
+```text
+AutofillService
+```
+
+where appropriate.
+
+Android Autofill is designed for password managers and apps that fill views in other apps, and is available from Android 8.0/API 26. ([Android Developers][2])
+
+Architecture:
+
+```text
+Flutter/React Native UI
+        ↓
+Native Android bridge
+        ↓
+AutofillService
+        ↓
+Local encrypted credential vault
+        ↓
+Android Autofill response
+        ↓
+Target username/password fields
+```
+
+The Autofill service should:
+
+1. Inspect the current autofill structure.
+2. Identify username/email fields.
+3. Identify password fields.
+4. Determine the current package/domain where available.
+5. Find matching local credential.
+6. Require authentication when necessary.
+7. Provide the credential through the Android Autofill API.
+8. Never expose the password to JavaScript unnecessarily.
+
+---
+
+# 11. Do Not Depend Only on AccessibilityService
+
+Accessibility can be useful for supported Smart Fill interactions, but it should not be treated as a universal HTML DOM reader.
+
+Use:
+
+```text
+AutofillService
+```
+
+for credential autofill where possible.
+
+Use:
+
+```text
+AccessibilityService
+```
+
+only for the existing supported Smart Fill functionality where Autofill cannot provide the required interaction.
+
+---
+
+# 12. External Chrome Login
+
+For:
+
+```text
+Chrome
+ ↓
+Website
+ ↓
+Login
+```
+
+preferred flow:
+
+```text
+User opens login page
+        ↓
+Smart Fill detects login fields
+        ↓
+Credential matching
+        ↓
+User authentication if required
+        ↓
+Email/username filled
+        ↓
+Password filled
+        ↓
+Verify fields
+```
+
+Do not perform:
+
+```text
+Copy password
+ ↓
+Clipboard
+ ↓
+Paste
+```
+
+as the normal path.
+
+---
+
+# 13. If Clipboard Fallback Is Necessary
+
+Clipboard should be:
+
+```text
+FALLBACK ONLY
+```
+
+If used:
+
+```text
+Write value
+ ↓
+Paste
+ ↓
+Immediately clear clipboard
+```
+
+Never leave the password in the clipboard indefinitely.
+
+Never copy passwords automatically without the user's authorization.
+
+---
+
+# 14. Fix Email Pasting
+
+The email issue should be fixed independently from password handling.
+
+Bad implementation:
+
+```javascript
+Clipboard.setString(email);
+```
+
+and then assuming the website will paste it.
+
+Better:
+
+```text
+Detect email field
+ ↓
+Resolve profile.email
+ ↓
+Use supported native autofill/direct input mechanism
+ ↓
+Set value
+ ↓
+Trigger required input/change event
+ ↓
+Read value back
+ ↓
+Verify
+```
+
+---
+
+# 15. React Native / Flutter App Internal Fields
+
+There is another important issue.
+
+For fields belonging to **your own app**, do not use clipboard at all.
+
+Bad:
+
+```text
+Profile JSON
+ ↓
+Clipboard
+ ↓
+Paste into TextInput
+```
+
+Correct:
+
+```text
+Profile JSON
+ ↓
+Application state
+ ↓
+TextInput controller/value
+```
+
+For example:
+
+```text
+profile.email
+     ↓
+emailController.text
+```
+
+or the equivalent Flutter controller/state mechanism.
+
+---
+
+# 16. Flutter Example Logic
+
+If the current application is actually Flutter, use the `TextEditingController` directly:
+
+```dart
+emailController.text = profile.email ?? '';
+```
+
+Password:
+
+```dart
+passwordController.text = unlockedPassword;
+```
+
+Do not:
+
+```dart
+Clipboard.setData(...)
+```
+
+for your own application's fields.
+
+For sensitive credentials, clear the controller/state when the screen is disposed or when the credential-fill operation ends, as appropriate.
+
+---
+
+# 17. React Native Example Logic
+
+If the existing application remains React Native:
+
+```tsx
+<TextInput
+  value={email}
+  onChangeText={setEmail}
+  keyboardType="email-address"
+  autoCapitalize="none"
+/>
+```
+
+When loading profile:
+
+```text
+localProfile.email
+        ↓
+setEmail(localProfile.email)
+```
+
+not:
+
+```text
+clipboard
+```
+
+For password:
+
+```text
+secure credential store
+        ↓
+unlock
+        ↓
+setPassword(value)
+```
+
+---
+
+# 18. Controlled Input Verification
+
+After filling any field:
+
+```text
+SET VALUE
+    ↓
+READ VALUE
+    ↓
+COMPARE
+```
+
+Example:
+
+```text
+Expected:
+user@example.com
+
+Actual:
+user@example.com
+
+MATCH ✓
+```
+
+If:
+
+```text
+Expected:
+user@example.com
+
+Actual:
+empty
+```
+
+then:
+
+```text
+FILL_FAILED
+```
+
+Do not report:
+
+```text
+Successfully filled
+```
+
+---
+
+# 19. React/Vue/Angular Website Forms
+
+Modern websites may use controlled inputs.
+
+Simply changing:
+
+```text
+DOM.value
+```
+
+may not update the site's internal state.
+
+Therefore the browser integration must:
+
+```text
+Set value
+ ↓
+Dispatch appropriate input/change events
+ ↓
+Allow framework state update
+ ↓
+Read back value
+ ↓
+Verify
+```
+
+For React/Vue/Angular sites, test the actual form behavior rather than only inspecting the DOM.
+
+---
+
+# 20. Email Normalization
+
+Before filling email:
+
+```text
+trim whitespace
+remove accidental newline
+preserve case unless the application specifically normalizes it
+validate basic email structure
+```
+
+Example:
+
+```text
+" user@example.com\n"
+```
+
+becomes:
+
+```text
+"user@example.com"
+```
+
+Do not modify a valid email unnecessarily.
+
+---
+
+# 21. Password Normalization
+
+Do NOT:
+
+```text
+trim password
+lowercase password
+uppercase password
+remove spaces
+modify special characters
+```
+
+A password must be treated as an exact byte/string value.
+
+If the saved password contains a leading/trailing space intentionally, preserve it.
+
+---
+
+# 22. Credential Selection
+
+If multiple accounts exist:
+
+```text
+example.com
+ ├── account A
+ └── account B
+```
+
+do not randomly choose one.
+
+Show:
+
+```text
+Choose account
+
+○ user1@example.com
+○ user2@example.com
+
+[ Continue ]
+```
+
+For password filling, user selection/authorization should be explicit unless the platform's trusted credential-provider flow already establishes the selection.
+
+---
+
+# 23. Default Password Requirement
+
+If the product has a "default password" feature, do NOT implement a universal hard-coded password such as:
+
+```text
+DefaultPassword123
+```
+
+Instead:
+
+```text
+User creates/saves credential
+        ↓
+Secure storage
+        ↓
+Credential ID
+        ↓
+Use only for the selected account/domain
+```
+
+If the user means a **default saved password for their own profile**, store it as an encrypted credential and require explicit authorization before use.
+
+---
+
+# 24. App's Own Login/Profile Screen
+
+When user opens your application:
+
+```text
+App opens
+ ↓
+Biometric/device authentication
+ ↓
+Vault unlock
+ ↓
+Profile available
+```
+
+After vault unlock:
+
+```text
+Add Profile
+Edit Profile
+Document Upload
+Smart Fill
+Credential Fill
+```
+
+must use the already-unlocked local session where appropriate.
+
+Do not ask for biometric authentication again every time the user moves from:
+
+```text
+Profile → Add Document
+```
+
+or:
+
+```text
+Email → Password
+```
+
+unless the configured security policy requires re-authentication.
+
+---
+
+# 25. Sensitive Operation Boundary
+
+Define:
+
+```text
+VAULT_UNLOCKED
+```
+
+and:
+
+```text
+CREDENTIAL_OPERATION_AUTHORIZED
+```
+
+as separate states.
+
+Example:
+
+```text
+App launch
+ ↓
+Biometric
+ ↓
+VAULT_UNLOCKED
+```
+
+Then:
+
+```text
+Smart Fill normal profile data
+→ allowed
+
+Request password
+→ credential authorization
+
+Request Aadhaar
+→ sensitive document authorization if configured
+```
+
+This prevents unnecessary repeated fingerprint prompts while keeping passwords protected.
+
+---
+
+# 26. Never Log Credentials
+
+Search the entire codebase for:
+
+```text
+console.log(password)
+print(password)
+debug(password)
+logger(password)
+JSON.stringify(profile)
+```
+
+Remove sensitive logging.
+
+Also check:
+
+```text
+Crashlytics
+Sentry
+analytics
+network logs
+Redux/state inspection
+development logs
+```
+
+Passwords and identity-document values must not be sent to telemetry.
+
+---
+
+# 27. Network Boundary
+
+Credential autofill must work:
+
+```text
+OFFLINE
+```
+
+after the local vault is configured.
+
+Architecture:
+
+```text
+Website
+   ↑
+Smart Fill
+   ↑
+Local Profile/Credential Vault
+   ↑
+Encrypted Device Storage
+```
+
+Not:
+
+```text
+Website
+   ↑
+Server
+   ↑
+Cloud database
+   ↑
+Password
+```
+
+No credential API should be introduced.
+
+---
+
+# 28. iOS Architecture
+
+For iOS, do not attempt to reproduce Android's AccessibilityService model.
+
+Use Apple's Password AutoFill / Credential Provider architecture.
+
+Apple documents Credential Provider Extensions specifically for password-manager apps that provide credentials to AutoFill in Safari and other apps. ([Apple Developer][3])
+
+Architecture:
+
+```text
+Flutter/RN App
+      ↓
+Credential Provider Extension
+      ↓
+Secure local credential storage
+      ↓
+Authentication
+      ↓
+ASPasswordCredential
+      ↓
+iOS AutoFill
+```
+
+The Credential Provider requires the appropriate AutoFill Credential Provider entitlement and user permission. ([Apple Developer][4])
+
+---
+
+# 29. iOS Credential Mapping
+
+Store credential identity using:
+
+```text
+service/domain
+username
+credential reference
+```
+
+When iOS requests:
+
+```text
+example.com
+```
+
+return the matching credential.
+
+Use Apple's credential-provider APIs rather than clipboard automation.
+
+---
+
+# 30. Password AutoFill
+
+The system should provide:
+
+```text
+Username
+Password
+```
+
+through the platform's AutoFill mechanism.
+
+Apple's Password AutoFill is designed to securely provide saved credentials and uses user authentication before credentials are accessed. ([Apple Developer][3])
+
+---
+
+# 31. OTP
+
+Do not treat OTP as a normal saved password.
+
+For:
+
+```text
+OTP
+2FA
+verification code
+```
+
+keep the existing policy:
+
+```text
+User controlled
+```
+
+If OTP autofill is later implemented, it must use a dedicated platform-supported mechanism rather than copying OTPs into arbitrary fields. Apple's credential-provider framework supports one-time-code credentials as a separate capability. ([Apple Developer][5])
+
+---
+
+# 32. Smart Fill Mapping
+
+The existing Smart Fill JSON should remain:
+
+```text
+profile.email
+profile.phone
+profile.fullName
+...
+```
+
+Credentials should be separate:
+
+```text
+credentials.accounts[]
+```
+
+Do not mix:
+
+```text
+Aadhaar
+PAN
+Password
+```
+
+into one unrestricted object.
+
+---
+
+# 33. Expected Login Example
+
+Website:
+
+```text
+Email
+[                    ]
+
+Password
+[                    ]
+
+[ Login ]
+```
+
+User presses:
+
+```text
+START SMART FILL
+```
+
+Expected:
+
+```text
+Detect LOGIN_FORM
+        ↓
+Email → profile.email
+        ↓
+Password → credential for current domain
+        ↓
+Authenticate if required
+        ↓
+Fill email
+        ↓
+Fill password
+        ↓
+Verify
+        ↓
+Show:
+2 fields filled ✓
+```
+
+Do NOT click:
+
+```text
+Login
+```
+
+automatically.
+
+User must press Login.
+
+---
+
+# 34. Expected App Internal Example
+
+App screen:
+
+```text
+Email
+[                    ]
+
+Phone
+[                    ]
+
+Full Name
+[                    ]
+```
+
+When profile exists:
+
+```text
+profile.email
+profile.phone
+profile.fullName
+```
+
+load directly into application state.
+
+Expected:
+
+```text
+Email      → filled ✓
+Phone      → filled ✓
+Full Name  → filled ✓
+```
+
+No clipboard operation should occur.
+
+---
+
+# 35. Failure Diagnostics
+
+Add internal diagnostics:
+
+```text
+Field detected: YES
+Field type: EMAIL
+Source: profile.email
+Value available: YES
+Fill mechanism: NATIVE_AUTOFILL
+Fill requested: YES
+Value verified: YES
+Status: SUCCESS
+```
+
+Password:
+
+```text
+Field detected: YES
+Field type: PASSWORD
+Credential matched: YES
+Authentication: SUCCESS
+Fill mechanism: SYSTEM_AUTOFILL
+Value verified: YES
+Status: SUCCESS
+```
+
+Never print the actual password.
+
+---
+
+# 36. Error Messages
+
+Instead of:
+
+```text
+Paste failed
+```
+
+show useful internal state:
+
+```text
+Email field detected
+Email value resolved
+Native fill attempted
+Field verification failed
+```
+
+For user-facing UI:
+
+```text
+Couldn't fill this field.
+Tap the field and choose Smart Fill/Autofill again.
+```
+
+Do not expose security-sensitive implementation details.
+
+---
+
+# 37. Testing Matrix
+
+Test at minimum:
+
+### Email
+
+* Gmail-style email field
+* Username field containing an email
+* React controlled input
+* Vue controlled input
+* Plain HTML input
+* Input with placeholder only
+* Input with autocomplete
+
+### Password
+
+* `type=password`
+* `autocomplete=current-password`
+* Login form
+* Multiple-account website
+* Incorrect domain
+* Authentication cancelled
+
+### App fields
+
+* Email TextInput
+* Password TextInput
+* Phone TextInput
+* Profile edit
+* Add Profile
+* Document metadata form
+
+---
+
+# 38. Critical Acceptance Criteria
+
+Implementation is complete only when:
+
+* [ ] Email fills reliably.
+* [ ] Email does not depend on clipboard.
+* [ ] Password fills through the proper secure platform mechanism.
+* [ ] Password is never stored in plaintext.
+* [ ] Password is never logged.
+* [ ] Password is not sent to the backend.
+* [ ] Correct domain/account is selected.
+* [ ] User authentication happens only when required.
+* [ ] One authentication can cover the current credential-fill operation.
+* [ ] The app's own TextInput fields use application state/controllers directly.
+* [ ] Clipboard is fallback only.
+* [ ] Clipboard is cleared immediately if used.
+* [ ] React/Vue/Angular controlled inputs are updated correctly.
+* [ ] Input/change events are handled.
+* [ ] Filled values are verified.
+* [ ] Login/Submit buttons are NOT automatically clicked.
+* [ ] OTP/2FA remains user-controlled unless separately implemented through a platform-supported mechanism.
+* [ ] Android uses AutofillService for supported credential autofill.
+* [ ] iOS uses Password AutoFill/Credential Provider architecture.
+* [ ] Offline operation remains possible.
+* [ ] Existing local-first encrypted vault remains the source of truth.
+
+---
+
+## Final Architecture
+
+```text
+                 LOCAL DEVICE
+┌─────────────────────────────────────────┐
+│                                         │
+│  Encrypted Profile                      │
+│  ├── Name                               │
+│  ├── Email                              │
+│  ├── Phone                              │
+│  └── Address                            │
+│                                         │
+│  Secure Credentials                     │
+│  ├── Domain                             │
+│  ├── Username                           │
+│  └── Encrypted Password                 │
+│                                         │
+└──────────────────┬──────────────────────┘
+                   │
+                   ▼
+             SMART FILL ENGINE
+                   │
+          ┌────────┴─────────┐
+          ▼                  ▼
+   Normal Form Data     Login Credentials
+          │                  │
+          ▼                  ▼
+   Profile JSON         Secure Credential
+          │                  │
+          ▼                  ▼
+   Native Fill          Platform Autofill
+          │                  │
+          └────────┬─────────┘
+                   ▼
+             FIELD VERIFICATION
+                   │
+                   ▼
+             FILLED SUCCESS ✓
+```
+
+**सबसे important fix:** अपने app के अंदर `clipboard → paste` हटाओ और सीधे `controller/state → TextInput` करो। External login forms के लिए Android पर **AutofillService** और iOS पर **Credential Provider/Password AutoFill** को primary mechanism बनाओ। इससे email/password filling काफी ज्यादा reliable और secure होगी। ([Android Developers][2])
+
+[1]: https://developer.android.com/reference/android/service/autofill/AutofillService?authuser=00&utm_source=chatgpt.com "AutofillService  |  API reference  |  Android Developers"
+[2]: https://developer.android.com/identity/autofill?utm_source=chatgpt.com "Autofill framework  |  Identity  |  Android Developers"
+[3]: https://developer.apple.com/documentation/Security/password-autofill?language=o_11&utm_source=chatgpt.com "Password AutoFill | Apple Developer Documentation"
+[4]: https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.authentication-services.autofill-credential-provider?changes=latest__1_8&utm_source=chatgpt.com "AutoFill Credential Provider Entitlement | Apple Developer Documentation"
+[5]: https://developer.apple.com/documentation/authenticationservices/providing-one-time-passcodes-to-autofill?changes=l_5_9&language=objc&utm_source=chatgpt.com "Providing one-time passcodes to AutoFill | Apple Developer Documentation"

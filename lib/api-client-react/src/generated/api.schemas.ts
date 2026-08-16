@@ -83,6 +83,61 @@ export interface VaultDocumentDeleteInput {
   ownerKey: string;
 }
 
+export type SmartFillScreenshotInputMimeType = typeof SmartFillScreenshotInputMimeType[keyof typeof SmartFillScreenshotInputMimeType];
+
+
+export const SmartFillScreenshotInputMimeType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface SmartFillScreenshotInput {
+  /**
+     * @minLength 16
+     * @maxLength 10000000
+     */
+  imageBase64: string;
+  mimeType: SmartFillScreenshotInputMimeType;
+  /** @maxLength 500 */
+  context?: string;
+}
+
+export interface SmartFillScreenshotField {
+  key: string;
+  label: string;
+  controlType: string;
+  required: boolean;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  confidence: number;
+  visibleValue: string;
+  pasteInstruction: string;
+  sensitive: boolean;
+}
+
+export interface SmartFillScreenshotPlacement {
+  fieldKey: string;
+  targetLabel: string;
+  controlType: string;
+  instruction: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  confidence: number;
+}
+
+export interface SmartFillScreenshotAnalysis {
+  screenSummary: string;
+  formTitle: string;
+  fields: SmartFillScreenshotField[];
+  placements: SmartFillScreenshotPlacement[];
+  manualActions: string[];
+}
+
 export type ListVaultDocumentsParams = {
 /**
  * @minLength 8

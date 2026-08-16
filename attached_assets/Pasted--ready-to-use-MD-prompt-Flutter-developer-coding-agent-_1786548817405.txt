@@ -1,0 +1,1206 @@
+बिल्कुल। नीचे **ready-to-use MD prompt** है। इसे अपने Flutter developer/coding agent को दे सकते हो।
+
+मैंने इसमें खास तौर पर ये चीजें रखी हैं:
+
+* App update के बाद existing local data **delete न हो**
+* PhonePe-जैसा **device biometric/PIN authentication**
+* Fingerprint/PIN app खुद store न करे; Android system authentication इस्तेमाल हो
+* Aadhaar/PAN/document images **server database में नहीं**, encrypted local vault में रहें
+* Android Keystore से encryption keys protect हों
+* Root/compromised device पर app **block** हो
+* Smart Fill locked vault से sensitive data access न कर सके
+* Production में hidden bypass न हो
+
+````markdown
+# Secure Local Vault + App Lock + Root Detection
+## Flutter / Android Developer Specification
+
+### Scope
+
+Modify the existing Flutter application.
+
+DO NOT rebuild the entire application.
+
+This specification adds a security layer for:
+
+1. App Lock
+2. Fingerprint / Face / Device PIN authentication
+3. Encrypted local document storage
+4. Android Keystore key protection
+5. Secure app-update data persistence
+6. Root / compromised-device detection
+7. Smart Fill security integration
+
+---
+
+# 1. MAIN REQUIREMENT
+
+The application contains sensitive personal documents such as:
+
+- Aadhaar
+- PAN
+- Passport
+- Driving Licence
+- Personal profile information
+- Phone number
+- Email
+- Address
+- Date of birth
+- OCR-extracted information
+
+These must be treated as highly sensitive data.
+
+The primary sensitive document storage should be:
+
+> ENCRYPTED LOCAL DEVICE STORAGE
+
+NOT an ordinary backend database.
+
+---
+
+# 2. APPLICATION STARTUP FLOW
+
+Implement this startup sequence:
+
+```text
+App Launch
+    ↓
+Device Integrity Check
+    ↓
+Is device rooted / compromised?
+       ↓
+   YES → Block application
+       ↓
+      NO
+       ↓
+Initialize Secure Storage
+       ↓
+Check App Lock
+       ↓
+Android Biometric / Device Credential
+       ↓
+Authentication Successful
+       ↓
+Unlock Secure Vault
+       ↓
+Open Home Screen
+````
+
+The user must never see sensitive documents before authentication.
+
+---
+
+# 3. PHONEPE-LIKE APP LOCK
+
+The application should provide an experience similar to secure financial applications.
+
+Example:
+
+```text
+        🔒
+
+   Secure Vault Locked
+
+Authenticate to continue
+
+      [Fingerprint]
+
+Use device PIN / Password
+```
+
+The app must use Android's native authentication system.
+
+Use:
+
+```text
+Android BiometricPrompt
+```
+
+with device credential fallback where supported.
+
+---
+
+# 4. IMPORTANT AUTHENTICATION RULE
+
+The application must NOT store:
+
+* fingerprint data
+* fingerprint templates
+* Face ID/face templates
+* Android device PIN
+* Android device password
+* biometric credentials
+
+The Android operating system performs the authentication.
+
+The application only receives a success/failure result.
+
+Architecture:
+
+```text
+Flutter
+   ↓
+BiometricAuthService
+   ↓
+Android BiometricPrompt
+   ↓
+Fingerprint / Face / Device Credential
+```
+
+---
+
+# 5. FIRST-TIME SETUP
+
+On first setup:
+
+```text
+Create Account
+      ↓
+Create Secure Local Vault
+      ↓
+Ask:
+"Enable biometric unlock?"
+      ↓
+Android authentication
+      ↓
+Enabled
+```
+
+If biometric authentication is unavailable, allow the supported Android device-credential fallback.
+
+Do not create a fake fingerprint screen.
+
+---
+
+# 6. APP OPEN FLOW AFTER SETUP
+
+Every time the protected application is opened:
+
+```text
+Open App
+   ↓
+Security Check
+   ↓
+Authentication Screen
+   ↓
+Fingerprint / Face / Device Credential
+   ↓
+Success
+   ↓
+Secure Vault unlocked
+   ↓
+Home
+```
+
+If authentication fails:
+
+```text
+Authentication failed.
+
+Please authenticate to continue.
+```
+
+Do not show sensitive information.
+
+---
+
+# 7. BACKGROUND / MINIMIZE BEHAVIOR
+
+When the user minimizes the application:
+
+```text
+User viewing documents
+       ↓
+App goes to background
+       ↓
+Sensitive screen becomes protected
+       ↓
+App locks
+       ↓
+User returns
+       ↓
+Authentication required
+```
+
+Implement a configurable security timeout.
+
+For maximum-security mode:
+
+```text
+Background
+    ↓
+Immediately lock
+```
+
+---
+
+# 8. RECENT APPS PRIVACY
+
+When the app is visible in Android Recent Apps:
+
+Sensitive information must not appear in the preview.
+
+Use Android secure-window mechanisms such as:
+
+```text
+FLAG_SECURE
+```
+
+where appropriate.
+
+The recent-app preview should show a protected/blank screen rather than:
+
+* Aadhaar image
+* PAN
+* phone number
+* address
+* document details
+
+---
+
+# 9. LOCAL DATA STORAGE
+
+Sensitive data must be separated from normal application preferences.
+
+Use:
+
+```text
+Non-sensitive data
+        ↓
+Normal preferences
+
+Sensitive data
+        ↓
+Encrypted Vault
+```
+
+---
+
+# 10. NON-SENSITIVE DATA
+
+Examples:
+
+```text
+Theme
+Language
+UI preferences
+Onboarding status
+```
+
+These may use normal local preferences.
+
+Do NOT store sensitive identity data here.
+
+---
+
+# 11. SENSITIVE STRUCTURED DATA
+
+The following must be stored in an encrypted local database:
+
+```text
+Full Name
+Date of Birth
+Phone Number
+Email
+Address
+Aadhaar Number
+PAN Number
+OCR Results
+Document Metadata
+```
+
+Use an encrypted SQLite/local database or another properly maintained encrypted database solution.
+
+Architecture:
+
+```text
+Sensitive Data
+      ↓
+Encrypted Local Database
+      ↓
+Encryption Key
+      ↓
+Android Keystore
+```
+
+---
+
+# 12. IDENTITY DOCUMENT IMAGES
+
+Documents such as:
+
+```text
+Aadhaar Front
+Aadhaar Back
+PAN Card
+Passport
+Driving Licence
+```
+
+must be stored as encrypted files inside Android app-private storage.
+
+Do NOT store them in:
+
+```text
+Downloads
+Gallery
+DCIM
+Public Storage
+Shared Storage
+Plaintext Cache
+SharedPreferences
+```
+
+---
+
+# 13. LOCAL VAULT STRUCTURE
+
+Recommended conceptual structure:
+
+```text
+App Private Storage
+│
+└── encrypted_vault/
+    │
+    ├── documents/
+    │   ├── random-id-001.enc
+    │   ├── random-id-002.enc
+    │   └── random-id-003.enc
+    │
+    └── database/
+        └── encrypted-vault.db
+```
+
+Use random identifiers.
+
+BAD:
+
+```text
+aadhaar_ANAM.jpg
+PAN_ABCDE1234F.jpg
+```
+
+GOOD:
+
+```text
+document_82a91.enc
+document_b31f7.enc
+```
+
+Never put sensitive information in filenames.
+
+---
+
+# 14. DOCUMENT ENCRYPTION
+
+Before writing a document to storage:
+
+```text
+Document
+   ↓
+Encrypt
+   ↓
+Encrypted bytes
+   ↓
+App-private storage
+```
+
+Use a standard authenticated encryption mechanism such as AES-GCM through a maintained cryptographic library.
+
+Do NOT invent custom encryption.
+
+Do NOT use:
+
+```text
+hardcoded password
+hardcoded encryption key
+```
+
+---
+
+# 15. ANDROID KEYSTORE
+
+Encryption keys must be protected using:
+
+```text
+Android Keystore
+```
+
+Architecture:
+
+```text
+Android Keystore
+       ↓
+Protect vault key
+       ↓
+Vault key
+       ↓
+Decrypt encrypted local database/files
+```
+
+Never store the master encryption key in:
+
+```text
+Dart source code
+SharedPreferences
+JSON
+Plain SQLite
+constants
+Git repository
+```
+
+---
+
+# 16. KEY AUTHENTICATION
+
+Where appropriate, configure Android Keystore key usage so access to protected key material requires Android user authentication.
+
+Example:
+
+```text
+User
+ ↓
+Fingerprint / Device Credential
+ ↓
+Android Keystore authorization
+ ↓
+Vault key available
+ ↓
+Encrypted vault unlocked
+```
+
+The Flutter application should not directly manage raw biometric templates.
+
+---
+
+# 17. AADHAAR DISPLAY
+
+Aadhaar should normally be masked.
+
+Example:
+
+```text
+Aadhaar
+
+XXXX XXXX 1234
+```
+
+To reveal the full value:
+
+```text
+User taps Reveal
+      ↓
+Authenticate
+      ↓
+Show full value temporarily
+```
+
+Do not expose the full Aadhaar number unnecessarily.
+
+---
+
+# 18. PAN DISPLAY
+
+Normal UI:
+
+```text
+PAN
+
+ABCDE•••••
+```
+
+Full PAN requires authentication.
+
+---
+
+# 19. NO SENSITIVE LOGGING
+
+Never write these to logs:
+
+```text
+Aadhaar number
+PAN number
+OTP
+Password
+Biometric information
+Document contents
+Full phone number
+Authentication tokens
+```
+
+Bad:
+
+```text
+print("Aadhaar = $aadhaar");
+```
+
+This must never exist in production code.
+
+---
+
+# 20. OCR SECURITY
+
+If documents are processed using OCR:
+
+```text
+Document
+    ↓
+OCR
+    ↓
+Extracted information
+    ↓
+Temporary memory
+    ↓
+User review
+    ↓
+Encrypted local storage
+    ↓
+Clear temporary OCR data
+```
+
+OCR results must not remain in:
+
+* logs
+* debug console
+* unnecessary temporary files
+* analytics
+
+---
+
+# 21. SERVER / DATABASE RULE
+
+The application may use a backend for:
+
+```text
+Account authentication
+OTP verification
+Non-sensitive metadata
+Application settings
+```
+
+But the backend must NOT automatically become the primary storage for raw:
+
+```text
+Aadhaar images
+PAN images
+Identity document images
+Full Aadhaar number
+Full PAN
+```
+
+For this architecture:
+
+```text
+Primary sensitive document storage
+=
+Encrypted local device vault
+```
+
+---
+
+# 22. APP UPDATE REQUIREMENT
+
+THIS IS VERY IMPORTANT.
+
+When the user updates the application:
+
+```text
+Old App
+   ↓
+User installs update
+   ↓
+Existing local encrypted vault remains
+   ↓
+Database migration runs if necessary
+   ↓
+Documents remain available
+```
+
+The update must NOT delete:
+
+* Aadhaar
+* PAN
+* profile data
+* document images
+* local vault
+
+---
+
+# 23. DATABASE MIGRATION
+
+Use explicit database versions.
+
+Example:
+
+```text
+DATABASE_VERSION = 1
+DATABASE_VERSION = 2
+DATABASE_VERSION = 3
+```
+
+Migration:
+
+```text
+Version 1
+   ↓
+Version 2
+   ↓
+Version 3
+```
+
+Never wipe the database during a normal update.
+
+Do NOT use:
+
+```text
+deleteDatabase()
+```
+
+as an update strategy.
+
+---
+
+# 24. APP UPDATE COMPATIBILITY
+
+The application must be tested for:
+
+```text
+Old version → New version
+```
+
+Verify:
+
+```text
+User opens updated application
+      ↓
+App Lock appears
+      ↓
+User authenticates
+      ↓
+Encrypted vault opens
+      ↓
+Previous documents are still available
+```
+
+---
+
+# 25. ROOT DEVICE DETECTION
+
+Create:
+
+```text
+DeviceIntegrityManager
+```
+
+It must check whether the device appears rooted, compromised, tampered with, or otherwise fails the application's security policy.
+
+Do NOT rely on a single root check.
+
+Use multiple signals.
+
+Possible checks:
+
+```text
+Root-management indicators
+Known root binaries
+Suspicious executable paths
+Writable protected directories
+Suspicious system properties
+Build/test-key indicators
+Debugger/tampering indicators
+Application integrity
+Play Integrity where applicable
+```
+
+Use maintained security libraries when appropriate.
+
+---
+
+# 26. ROOTED DEVICE STARTUP
+
+At startup:
+
+```text
+Device Integrity Check
+       ↓
+Safe?
+    /     \
+  YES      NO
+   ↓        ↓
+Continue   Block
+```
+
+If the device fails the application's security policy:
+
+```text
+This device does not meet the
+security requirements of this application.
+
+For your protection, the secure vault
+cannot be opened on this device.
+
+[Close App]
+```
+
+The application must not show:
+
+* documents
+* Aadhaar
+* PAN
+* Smart Fill data
+* profile information
+
+before this check completes.
+
+---
+
+# 27. PLAY INTEGRITY
+
+For production Android builds, consider integrating:
+
+```text
+Google Play Integrity
+```
+
+Use it as an additional security signal.
+
+Architecture:
+
+```text
+Local Integrity Checks
+        +
+Play Integrity
+        +
+App Signature / Installation Integrity
+        ↓
+DeviceIntegrityManager
+```
+
+Where server-side validation is needed, verify the Play Integrity token on the backend.
+
+Do NOT trust a client-side value such as:
+
+```text
+isRooted = false
+```
+
+as the only security mechanism.
+
+---
+
+# 28. ROOT DETECTION LIMITATION
+
+Root detection is not perfect.
+
+Do not claim:
+
+```text
+100% root detection
+```
+
+Instead use layered security:
+
+```text
+Root detection
++
+Play Integrity
++
+Android Keystore
++
+Biometric/device authentication
++
+Encrypted storage
++
+Minimal data exposure
+```
+
+---
+
+# 29. PRODUCTION BYPASS
+
+Production builds must NOT contain:
+
+```text
+Secret PIN
+Hidden button
+Magic code
+Developer password
+Root bypass
+Debug endpoint
+```
+
+A development-only override may exist in a separate local debug configuration, but it must not be accessible in production.
+
+---
+
+# 30. SMART FILL INTEGRATION
+
+Smart Fill must respect the secure vault.
+
+If the vault is locked:
+
+```text
+Smart Fill requests sensitive data
+       ↓
+Require authentication
+       ↓
+Authenticate
+       ↓
+Unlock required vault access
+       ↓
+Retrieve ONLY required field
+       ↓
+User confirmation
+       ↓
+Fill
+       ↓
+Clear temporary value
+```
+
+---
+
+# 31. SMART FILL MUST NOT LOAD EVERYTHING
+
+Example:
+
+Website asks:
+
+```text
+Full Name
+Phone
+```
+
+Smart Fill should retrieve only:
+
+```text
+profile.fullName
+profile.phone
+```
+
+It should NOT load:
+
+```text
+Aadhaar image
+PAN image
+Passport
+Complete document vault
+```
+
+unless explicitly required and approved.
+
+---
+
+# 32. SECURE MEMORY HANDLING
+
+Do not keep sensitive data indefinitely in global application state.
+
+Preferred:
+
+```text
+Encrypted storage
+      ↓
+Read required value
+      ↓
+Use
+      ↓
+Clear temporary reference/state where practical
+```
+
+---
+
+# 33. CLIPBOARD
+
+Do not use clipboard as the default sensitive-data transfer mechanism.
+
+If clipboard is temporarily required:
+
+```text
+Copy
+ ↓
+Use
+ ↓
+Clear as soon as practical
+```
+
+Prefer direct supported form interaction.
+
+---
+
+# 34. NOTIFICATIONS
+
+Never expose sensitive data through notifications.
+
+BAD:
+
+```text
+Your Aadhaar XXXX1234 was used.
+```
+
+GOOD:
+
+```text
+Smart Fill requires your attention.
+```
+
+---
+
+# 35. LOGOUT VS APP LOCK
+
+These must be separate.
+
+### App Lock
+
+```text
+Temporary protection
+      ↓
+Biometric/device authentication
+      ↓
+Vault available again
+```
+
+### Logout
+
+```text
+Clear authenticated account session
+      ↓
+Lock vault
+      ↓
+Require account login again
+```
+
+Do NOT automatically delete local documents on logout.
+
+---
+
+# 36. UNINSTALL
+
+Sensitive data should remain inside app-private storage.
+
+Normally:
+
+```text
+Uninstall
+    ↓
+Android removes app-private storage
+    ↓
+Local vault removed
+```
+
+Do not copy sensitive documents to public storage just so they survive uninstall.
+
+If cloud backup is added later, it must be separately designed as an encrypted backup feature.
+
+---
+
+# 37. SECURITY MODULES
+
+Recommended architecture:
+
+```text
+SecurityManager
+│
+├── DeviceIntegrityManager
+├── BiometricAuthManager
+├── AppLockManager
+├── VaultKeyManager
+├── EncryptedDatabaseManager
+├── SecureDocumentStorage
+└── SessionManager
+```
+
+---
+
+# 38. FLUTTER STRUCTURE
+
+Add security functionality to the existing project:
+
+```text
+lib/
+└── core/
+    └── security/
+        ├── security_manager.dart
+        ├── biometric_auth_service.dart
+        ├── app_lock_manager.dart
+        ├── secure_storage_service.dart
+        ├── encrypted_database.dart
+        ├── document_vault.dart
+        └── device_integrity_service.dart
+```
+
+Android native layer:
+
+```text
+SecurityMethodChannel.kt
+BiometricAuthManager.kt
+DeviceIntegrityManager.kt
+SecureVaultKeyManager.kt
+```
+
+Use the existing package structure instead of blindly replacing the project.
+
+---
+
+# 39. SECURITY STARTUP CONTROLLER
+
+Implement:
+
+```text
+SecurityStartupController
+```
+
+Logic:
+
+```text
+initialize()
+      ↓
+checkDeviceIntegrity()
+      ↓
+FAIL → block application
+      ↓
+initializeKeystore()
+      ↓
+initializeVault()
+      ↓
+checkAppLock()
+      ↓
+authenticateUser()
+      ↓
+unlockVault()
+      ↓
+navigateToHome()
+```
+
+---
+
+# 40. TESTING
+
+## App Lock
+
+Test:
+
+* First launch
+* Fingerprint
+* Face authentication where supported
+* Device PIN/password fallback
+* Failed authentication
+* Background/resume
+* Recent-app preview
+* Session timeout
+* Logout
+
+## Local Vault
+
+Test:
+
+* Upload Aadhaar
+* Upload PAN
+* OCR
+* Encrypt document
+* Restart app
+* Authenticate
+* Verify document remains
+* Update app
+* Verify document remains
+* Delete document
+* Reset vault
+
+## Root / Integrity
+
+Test on:
+
+* Normal Android device
+* Emulator
+* Rooted test device
+* Different Android versions
+* Supported Play Integrity environment
+* Release build
+
+---
+
+# 41. SECURITY ACCEPTANCE CRITERIA
+
+The feature is complete only when:
+
+* [ ] App Lock uses Android biometric/device authentication.
+* [ ] Fingerprint/biometric data is never stored by the application.
+* [ ] Device PIN/password is never stored by the application.
+* [ ] Sensitive documents are stored locally.
+* [ ] Document images are encrypted.
+* [ ] Sensitive structured data is encrypted.
+* [ ] Encryption keys are protected by Android Keystore.
+* [ ] Aadhaar/PAN are masked in normal UI.
+* [ ] Full sensitive values require authentication.
+* [ ] Backgrounding protects sensitive screens.
+* [ ] Recent-app preview does not expose sensitive information.
+* [ ] Normal app updates preserve the local encrypted vault.
+* [ ] Database migrations preserve existing user data.
+* [ ] Root/device integrity checks run before sensitive content is opened.
+* [ ] Production has no root-detection bypass.
+* [ ] Play Integrity is used where appropriate.
+* [ ] Smart Fill cannot access the vault while locked.
+* [ ] Smart Fill retrieves only the fields required.
+* [ ] Temporary sensitive values are cleared after use.
+* [ ] Sensitive data is not stored in ordinary shared storage.
+* [ ] Sensitive data is not written to logs or analytics.
+
+---
+
+# FINAL DEVELOPER INSTRUCTION
+
+Integrate this security layer into the EXISTING Flutter application.
+
+Do NOT rewrite unrelated features.
+
+Priority:
+
+```text
+Device Integrity
+       ↓
+Biometric / Device Authentication
+       ↓
+Android Keystore
+       ↓
+Encrypted Local Vault
+       ↓
+App Background Lock
+       ↓
+Root/Integrity Blocking
+       ↓
+Smart Fill Security
+```
+
+Use Android's official security primitives and maintained libraries.
+
+Do not invent cryptography.
+
+Do not store biometric/PIN data.
+
+Do not create a hidden production security bypass.
+
+The final application should behave like a secure personal document vault:
+
+```text
+Open App
+   ↓
+Security Check
+   ↓
+Fingerprint / Face / Device Credential
+   ↓
+Unlock Secure Vault
+   ↓
+View Documents
+   ↓
+Use Smart Fill only with approved data
+```
+
+```
+
+### सबसे important architecture
+
+**Aadhaar/PAN images:** app की **private encrypted local storage**  
+**Aadhaar/PAN text data:** **encrypted local database**  
+**Encryption keys:** **Android Keystore**  
+**Fingerprint/PIN:** **Android system संभालेगा; app store नहीं करेगा**  
+**App update:** local vault **preserve** होना चाहिए  
+**Rooted/compromised device:** security check fail होने पर **vault/app access block** होना चाहिए।
+```

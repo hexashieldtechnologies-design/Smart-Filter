@@ -99,3 +99,51 @@ export const DeleteVaultDocumentBody = zod.object({
 export const DeleteVaultDocumentResponse = zod.void()
 
 
+/**
+ * @summary Analyze a screenshot and return a reviewable paste plan
+ */
+export const analyzeSmartFillScreenshotBodyImageBase64Min = 16;
+export const analyzeSmartFillScreenshotBodyImageBase64Max = 10000000;
+
+export const analyzeSmartFillScreenshotBodyContextMax = 500;
+
+
+
+export const AnalyzeSmartFillScreenshotBody = zod.object({
+  "imageBase64": zod.string().min(analyzeSmartFillScreenshotBodyImageBase64Min).max(analyzeSmartFillScreenshotBodyImageBase64Max),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "context": zod.string().max(analyzeSmartFillScreenshotBodyContextMax).optional()
+})
+
+export const analyzeSmartFillScreenshotResponseFieldsItemConfidenceMin = 0;
+export const analyzeSmartFillScreenshotResponseFieldsItemConfidenceMax = 100;
+
+export const analyzeSmartFillScreenshotResponsePlacementsItemConfidenceMin = 0;
+export const analyzeSmartFillScreenshotResponsePlacementsItemConfidenceMax = 100;
+
+
+
+export const AnalyzeSmartFillScreenshotResponse = zod.object({
+  "screenSummary": zod.string(),
+  "formTitle": zod.string(),
+  "fields": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "controlType": zod.string(),
+  "required": zod.boolean(),
+  "confidence": zod.number().min(analyzeSmartFillScreenshotResponseFieldsItemConfidenceMin).max(analyzeSmartFillScreenshotResponseFieldsItemConfidenceMax),
+  "visibleValue": zod.string(),
+  "pasteInstruction": zod.string(),
+  "sensitive": zod.boolean()
+})),
+  "placements": zod.array(zod.object({
+  "fieldKey": zod.string(),
+  "targetLabel": zod.string(),
+  "controlType": zod.string(),
+  "instruction": zod.string(),
+  "confidence": zod.number().min(analyzeSmartFillScreenshotResponsePlacementsItemConfidenceMin).max(analyzeSmartFillScreenshotResponsePlacementsItemConfidenceMax)
+})),
+  "manualActions": zod.array(zod.string())
+})
+
+

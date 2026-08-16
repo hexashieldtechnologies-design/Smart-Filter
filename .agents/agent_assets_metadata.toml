@@ -7,3 +7,269 @@ uri = "file://attached_assets/secure-vault-mobile-source.zip"
 type = "unspecified"
 title = "Secure Vault mobile source ZIP"
 description = "Direct download of the current Secure Vault Expo mobile source. Note: this is a source bundle, not an installable APK."
+
+[[outputs]]
+id = "S9D8BN7HqCGBb1-Gs2g3z"
+uri = "file://attached_assets/secure-vault-release-arm64.apk"
+type = "unspecified"
+title = "Secure Vault — installable Android APK"
+description = "Release APK, 39 MB, verified as an Android package. Built for arm64-v8a devices."
+
+[[outputs]]
+id = "VWXuMWKbwAdLBcgH1Rd83"
+uri = "file://attached_assets/Secure-Vault-APK.zip"
+type = "unspecified"
+title = "Secure Vault Android APK ZIP"
+description = "ZIP containing the verified arm64 Android release APK and build metadata."
+
+[[outputs]]
+id = "eZKoXcyaL94TChVSiFkWY"
+uri = "file://attached_assets/Secure-Vault.apk"
+type = "unspecified"
+title = "Secure Vault Android APK"
+description = "Verified arm64 Android release build with private local document storage and user-confirmed Smart Fill."
+
+[[outputs]]
+id = "QTqkmcAqymWIGHTpgBfw4"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.1-APK.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.1 Android APK ZIP"
+description = "Updated arm64 Android release APK with biometric/device-credential lock, Keystore-backed encrypted vault, background privacy, FLAG_SECURE, and layered integrity checks. Includes checksum, metadata, and installation notes."
+
+[[outputs]]
+id = "YkihDb980tS4uXGA6yszs"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.2-arm64.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.2 Android APK"
+description = "Verified arm64 installable update APK. Install over the existing app without uninstalling it."
+
+[[outputs]]
+id = "tZYVGu9I094n74Qv21MQP"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.2-source-update.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.2 Source Update ZIP"
+description = "Verified source/update package with the latest mobile UI, local OCR/cache flow, encrypted vault bridge, Android native sources, and build metadata."
+
+[[outputs]]
+id = "KsvacrRA81AFVr3QYJsf7"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.2-APK.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.2 APK ZIP"
+description = "ZIP package containing the installable arm64 APK, version metadata, checksum, and installation instructions."
+
+[[outputs]]
+id = "OohJ1uAN1cKbQVdqbaHXP"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.3-APK.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.3 Fixed APK ZIP"
+description = "Updated APK ZIP with the persistent foreground floating Smart Fill fix, two-action bubble menu, native state sync, metadata, checksum, and install instructions."
+
+[[outputs]]
+id = "uYiKdS0_J2pOvLnTpoD3I"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.4-APK.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.4 Corrected Auto-Fill APK ZIP"
+description = "Arm64 Android release with unique visible field counting, browser-control filtering, semantic local JSON mapping, focus/set-text/verify fill, controlled WebView paste fallback, automatic page scanning, and checksums."
+
+[[outputs]]
+id = "7JmFJhO82siUt25e4dxOW"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.4-arm64.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.4 Corrected Auto-Fill APK"
+description = "Direct installable arm64 APK with the corrected field count and local-data filling logic."
+
+[[outputs]]
+id = "PYobJrW_Od5_8TMCVCuOC"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.5-APK.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.5 Corrected Auto-Fill APK ZIP"
+description = "Update-safe arm64 Android release (versionCode 6) with unique semantic field counting, browser-control filtering, local JSON mapping, verified set-text/paste fill fallback, and automatic page scanning."
+
+[[outputs]]
+id = "u91VGX51BxW_1O5uP1Dmu"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.5-arm64.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.5 Corrected Auto-Fill APK"
+description = "Direct installable arm64 APK; versionCode 6 updates the previous 1.0.4 build."
+
+[[outputs]]
+id = "ENY80f6NSJGOw5tQbb0O8"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.5-url-field-fix-arm64.apk"
+type = "unspecified"
+title = "Secure Vault — URL field fix APK"
+description = "Arm64 Android release build with the Smart Fill browser address-bar exclusion fix."
+
+[[outputs]]
+id = "5bfERWn5gj6IWKTG9ipwy"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.5-url-field-fix-arm64.apk.sha256"
+type = "unspecified"
+title = "APK checksum"
+description = "SHA-256 checksum for the Smart Fill URL field fix APK."
+
+[[outputs]]
+id = "IxisqXHKUr34Fh_dxnkDl"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.5-url-field-fix-arm64.zip"
+type = "unspecified"
+title = "Secure Vault latest Smart Fill APK ZIP"
+description = "Latest arm64 APK with field alias matching, isolated per-field labels, pause/resume controls, manual page fill, and repeat autofill protection."
+
+[[outputs]]
+id = "56Z61B4wfjU8ifMOQJ534"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.6-url-field-fix-arm64.apk"
+type = "unspecified"
+title = "Secure Vault direct APK 1.0.6"
+description = "Direct unzipped arm64 APK with versionCode 7, ready to install without opening a ZIP."
+
+[[outputs]]
+id = "zRObLwa2fGD4PLpNhQgcZ"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.6-url-field-fix-arm64.apk.sha256"
+type = "unspecified"
+title = "Secure Vault APK checksum"
+description = "SHA-256 checksum for the direct APK."
+
+[[outputs]]
+id = "KcDVY-2nq0xs7qcUK9O0M"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.6-url-field-fix-arm64.zip"
+type = "unspecified"
+title = "Secure Vault APK ZIP 1.0.6"
+description = "ZIP archive containing the APK directly at the top level and its checksum file."
+
+[[outputs]]
+id = "FGNYN8s9odnv-J2_yuNFE"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.7-smart-fill-arm64.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.7 Smart Fill APK ZIP"
+description = "Arm64 Android release package with the APK, SHA-256 checksum, and install notes."
+
+[[outputs]]
+id = "Fv4EjNeXIDrDoY3aCOCgG"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.7-smart-fill-arm64.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.7 Smart Fill APK"
+description = "Direct arm64-v8a APK for modern 64-bit Android phones."
+
+[[outputs]]
+id = "V3cULc94RivvTSQDGtBHH"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.8-phone.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.8 APK"
+description = "Verified Android release APK with arm64-v8a and armeabi-v7a support."
+
+[[outputs]]
+id = "MfyBZdQYgFMgcM224I38e"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.8-phone.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.8 APK ZIP"
+description = "ZIP containing the APK, SHA-256 checksum, install README, and build metadata."
+
+[[outputs]]
+id = "HUZlqM8jG0aqoG67pMFIL"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.9-smart-fill.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.9 Smart Fill APK"
+description = "Release APK with phone/country-code matching, email matching, and confirmed saved login password filling."
+
+[[outputs]]
+id = "KGTPAR1bxkDhAlzw0ArNB"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.9-smart-fill.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.9 Smart Fill ZIP"
+description = "ZIP containing the updated APK, SHA-256 checksum, install instructions, and build metadata."
+
+[[outputs]]
+id = "MsecUcpeFw7PJIdDZEReX"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.10-smart-fill.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.10 Smart Fill APK ZIP"
+description = "Updated arm64 Android APK with Smart Fill security fixes, SHA-256 checksum, and installation instructions."
+
+[[outputs]]
+id = "acG2NOvSxCkf7DIq6V36N"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.10-arm64-release.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.10 APK"
+description = "Installable Android arm64-v8a release APK. SHA-256: 26464bc4cd6852df5d93077d51ec0fa206f79a68da97fb716aaae24077c71033"
+
+[[outputs]]
+id = "_EyjyK3vhOurK85KcVein"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.10-arm64-release.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.10 APK ZIP"
+description = "ZIP containing the APK, README, and APK checksum. SHA-256: 803c25429ca74b87559094167c8ad9bab64a518a1f81282435c67a7b852f24fd"
+
+[[outputs]]
+id = "8rO83eIJNrhn7PiYMyNRJ"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.10-compatible.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.10 Compatible APK"
+description = "Verified Android APK with arm64-v8a and armeabi-v7a support. SHA-256: cbd3180a15a358475ef8a0323c30c13f0f619fdc8e52528fcb18c0d18b11130f"
+
+[[outputs]]
+id = "Srj4lfDe8BHjoowgJjwE_"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.10-compatible.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.10 Compatible ZIP"
+description = "ZIP containing the compatible APK, README, and checksum. SHA-256: 1c62621d5c0356a3680239a755b7d8ed492430c4b58e1279d3d26a1c7530606d"
+
+[[outputs]]
+id = "cjQZ1dCP2HkksPN9_qXEs"
+uri = "file://attached_assets/Secure-Vault-Chrome-Extension-Implementation-Spec.md"
+type = "text"
+title = "Secure Vault Chrome Extension Specification"
+description = "Developer-ready Manifest V3 implementation blueprint covering architecture, encrypted vault import, Files multi-select, PAN/Aadhaar JSON mapping, DOM field matching, fill verification, security boundaries, message contracts, and testing."
+
+[[outputs]]
+id = "8lxWFDBKLJVI21Lf0Al5P"
+uri = "file://attached_assets/Secure-Vault-MCP-Agent-Integration-Spec.md"
+type = "text"
+title = "Secure Vault MCP Agent Integration Specification"
+description = "Developer-ready MCP blueprint for connecting Secure Vault with Codex, Cursor, Anti-Gravity, and other MCP-compatible agents, including encrypted local vault access, scoped tools, PAN/Aadhaar mapping, approval flows, browser-extension bridge, security boundaries, and testing."
+
+[[outputs]]
+id = "4o_Os0SZYOCghy3qi83aU"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.11-arm64-release.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.11 arm64 APK"
+description = "Verified Android release APK. Package com.anonymous.securevaultmobile, version 1.0.11 / version code 12, arm64-v8a, signed with APK Signature Scheme v2. SHA-256: 589c50c7794516eb285965638bbd9cd9fc7fe52b09e95e3f3c6d40d9ed4c316b"
+
+[[outputs]]
+id = "FaPTl8JAar9g0dvk7amkg"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.11-arm64-release.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.11 release package"
+description = "Install-ready ZIP containing the APK, checksum file, and release notes. SHA-256: ab98a908e0ad78ecb95a120c5788389130ec603678020c3ff626ff12808642b9"
+
+[[outputs]]
+id = "hYlOJXT4sAgZcOmTwjVWj"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.12-arm64-release.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.12 Android APK ZIP"
+description = "Verified arm64 Android release package containing the APK, SHA-256 checksum, and installation notes. Includes the requested Convert into JSON document action and green floating Smart Fill control updates."
+
+[[outputs]]
+id = "R-9mo41SiBGWqHI0NkZvZ"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.13-arm64-release.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.13 Android package"
+description = "Updated arm64 Android release ZIP containing the APK, SHA-256 checksum, and install notes."
+
+[[outputs]]
+id = "29xTdxJMX2N4_cD-GWMl-"
+uri = "file://artifacts/secure-vault-mobile/release-package/Secure-Vault-1.0.14-arm64-release.zip"
+type = "unspecified"
+title = "Secure Vault 1.0.14 floating UI APK"
+description = "Updated arm64 APK with the single radial Smart Fill floating control, four round actions, edge-aware placement, saved drag position, haptics, and install notes."
+
+[[outputs]]
+id = "vLEclVlzThmIgl8bIwPMf"
+uri = "file://artifacts/secure-vault-mobile/Secure-Vault-1.0.15-smart-fill-arm64.apk"
+type = "unspecified"
+title = "Secure Vault 1.0.15 Smart Fill APK"
+description = "Arm64 Android release APK with the floating Smart Fill deep-link, current-screen analysis, scrollable Files panel, and Start/Stop action-state fixes."
+
+[[outputs]]
+id = "waF_GwOqeG4gvYSdA2flT"
+uri = "file://artifacts/secure-vault-mobile/releases/secure-vault-smart-fill-arm64-v1.0.15.zip"
+type = "unspecified"
+title = "Secure Vault APK ZIP"
+description = "Download this ZIP and extract the arm64 APK inside."

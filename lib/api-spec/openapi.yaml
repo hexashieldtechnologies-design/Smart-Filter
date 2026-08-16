@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: vault
     description: Test vault document operations
+  - name: smart-fill
+    description: Screenshot analysis for user-reviewed Smart Fill
 paths:
   /healthz:
     get:
@@ -90,6 +92,28 @@ paths:
       responses:
         "204":
           description: Document deleted
+  /smart-fill/analyze-screenshot:
+    post:
+      operationId: analyzeSmartFillScreenshot
+      tags: [smart-fill]
+      summary: Analyze a screenshot and return a reviewable paste plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartFillScreenshotInput"
+      responses:
+        "200":
+          description: Screenshot analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartFillScreenshotAnalysis"
+        "400":
+          description: Invalid screenshot
+        "502":
+          description: Analysis provider failure
 components:
   schemas:
     HealthStatus:
@@ -159,4 +183,54 @@ components:
         ownerKey:
           type: string
           minLength: 8
+    SmartFillScreenshotInput:
+      type: object
+      required: [imageBase64, mimeType]
+      properties:
+        imageBase64:
+          type: string
+          minLength: 16
+          maxLength: 10000000
+        mimeType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+        context:
+          type: string
+          maxLength: 500
+    SmartFillScreenshotField:
+      type: object
+      required: [key, label, controlType, required, confidence, visibleValue, pasteInstruction, sensitive]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        controlType: { type: string }
+        required: { type: boolean }
+        confidence: { type: number, minimum: 0, maximum: 100 }
+        visibleValue: { type: string }
+        pasteInstruction: { type: string }
+        sensitive: { type: boolean }
+    SmartFillScreenshotPlacement:
+      type: object
+      required: [fieldKey, targetLabel, controlType, instruction, confidence]
+      properties:
+        fieldKey: { type: string }
+        targetLabel: { type: string }
+        controlType: { type: string }
+        instruction: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 100 }
+    SmartFillScreenshotAnalysis:
+      type: object
+      required: [screenSummary, formTitle, fields, placements, manualActions]
+      properties:
+        screenSummary: { type: string }
+        formTitle: { type: string }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/SmartFillScreenshotField" }
+        placements:
+          type: array
+          items: { $ref: "#/components/schemas/SmartFillScreenshotPlacement" }
+        manualActions:
+          type: array
+          items: { type: string }
 

@@ -1,0 +1,35 @@
+देखो भाई, जैसे कि मैंने image दिया है। इसमें ऐसे files आ रहे हैं। सारे files locally save जैसे उसने upload किया Aadhaar card सब कुछ locally save होना चाहिए अपने system के अंदर। ठीक है। Properly
+
+GI gidoje9867 gidoje9867 8 minutes ago Exploring local file storage
+
+Exploring local file storage हाँ भाई, screenshot में floating button काम कर रहा है, लेकिन form के fields match नहीं हो रहे और documents/images की local persistence भी मजबूत करनी होगी। अब Aadhaar, PAN, Passport आदि के uploaded files को device के अंदर सुरक्षित local storage में persist करूँगा, ताकि app बंद/open करने पर भी files रहें और Smart Fill के लिए सही local data उपलब्ध हो।
+
+14 actions अब local-save को सही तरीके से कर रहा हूँ: सिर्फ metadata नहीं, picked file की actual copy app के private device storage में जाएगी। AsyncStorage में केवल file path और document metadata रहेगा, इसलिए app बंद/open होने पर Aadhaar/PAN की files बनी रहेंगी और remote API unavailable होने पर भी local save fail नहीं होगा।
+
+29 actions File-system package का पुराना import path इस Expo version में typecheck नहीं हो रहा था, इसलिए local-storage logic को stable compatibility wrapper के साथ ठीक कर रहा हूँ। इससे build में runtime और TypeScript दोनों सही रहेंगे।
+
+6 actions TypeScript और diff checks अब सफल हैं। अब final APK rebuild कर रहा हूँ ताकि private device storage वाला local-save logic installed APK में भी शामिल हो जाए।
+
+2 actions Local file storage वाला final APK भी सफलतापूर्वक build हो गया है। अब इसी नए build को APK और ZIP दोनों में replace करके अंतिम verification कर रहा हूँ।
+
+6 actions एक और छोटा persistence edge case मिला: document delete करने पर पुराना local path metadata में बच सकता था, और offline में नया “Other document” remote sync आने पर list से हट सकता था। इसे भी ठीक कर रहा हूँ ताकि local vault सच में complete और reliable रहे।
+
+5 actions You've reached your daily free quota limit. It will reset at 12:00 AM UTC. देखो भाई properly क्या बोलते हैं। जैसे कि मैंने web browser खोला और उस button पर click किया। ठीक है। मेरा जो logo वाला, उस पर click किया तो automatic से fill up हो जाना चाहिए। जो local पर files पड़े हैं, वह उसको analyze करके properly, ठीक है।
+
+BE
+bepac71159
+bepac71159
+9 minutes ago
+मैं Smart Fill flow को इस तरह मजबूत कर रहा हूँ: आपके vault में locally saved Aadhaar/PAN/Passport से verified fields पढ़े जाएंगे, फिर browser/form में आपके logo वाले floating button पर click करने के बाद matching fields दिखेंगे और आपकी confirmation के बाद ही भरेंगे। Files device के private storage में ही रहेंगी; बिना permission के form submit नहीं होगा। पहले मौजूदा mobile flow और local-storage bridge को देखकर उसी architecture में बदलाव करूँगा।
+
+
+21 actions
+मुझे मौजूदा flow में मुख्य कमी मिल गई है: floating button मौजूद है, लेकिन उसे केवल पहले से लिखे हुए demo values मिल रहे हैं—locally saved document की असली file से कोई analysis नहीं हो रहा। अब मैं इसे दो हिस्सों में ठीक कर रहा हूँ: Android APK में on-device OCR bridge और vault में extracted fields की सुरक्षित persistence; फिर वही approved fields floating button से browser के matching inputs में जाएँगे। Unknown, masked या consent/CAPTCHA fields को auto-fill नहीं किया जाएगा।
+
+
+26 actions
+अब review gate भी सही कर दिया है: पहले local files का on-device analysis, फिर detected fields की सूची, फिर आपकी approval, और उसके बाद floating control start होगा। यानी button दबाते ही blind demo values नहीं जाएँगी। अब TypeScript और Android native build दोनों से verify कर रहा हूँ, क्योंकि OCR bridge में छोटी compile गलती भी APK में feature रोक सकती है।
+
+
+9 actions
+You've reached your daily free quota limit. It will reset at 12:00 AM UTC.

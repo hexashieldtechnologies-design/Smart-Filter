@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/secure-vault-chrome-extension/"
+title = "Secure Vault Chrome Extension"
+description = "A user-controlled Chrome Manifest V3 Smart Fill extension that imports an encrypted local vault, reviews safe field matches, fills only approved fields, and verifies each result without submitting forms."
+version = "1.0.0"
+id = "artifacts/secure-vault-chrome-extension"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/secure-vault-chrome-extension/" ]
+localPort = 18791
+
+[services.development]
+run = "pnpm --filter @workspace/secure-vault-chrome-extension run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/secure-vault-chrome-extension", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/secure-vault-chrome-extension/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18791"
+BASE_PATH = "/secure-vault-chrome-extension/"

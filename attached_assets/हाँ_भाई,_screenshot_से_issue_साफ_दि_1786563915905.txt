@@ -1,0 +1,1573 @@
+हाँ भाई, screenshot से issue साफ दिख रहा है। नीचे जो **“No approved matching fields found on this page”** आ रहा है, इसका मतलब तुम्हारा Smart Fill **page पर fields देख रहा है लेकिन mapping/approval layer उन्हें reject कर रही है**। Screenshot में actual fields clearly मौजूद हैं — First name, Last name, Email, Phone number, LinkedIn URL और Resume upload — इसलिए सिर्फ “no matching fields” दिखाना सही behavior नहीं है।
+
+और तुम्हारी दूसरी requirement भी important है: **Profile/Vault में जो information पहले से saved है, वही Smart Fill की primary source होनी चाहिए।** हर website पर जाकर फिर से document OCR नहीं होना चाहिए।
+
+यह detailed prompt अपने AI coding agent को दो:
+
+````md
+# SMART FILL — FIELD DETECTION, PROFILE MAPPING & UPLOAD FIX
+## FINAL DEBUG + IMPLEMENTATION PROMPT
+
+You are working on the existing Secure Vault React Native / Expo application.
+
+DO NOT migrate to Flutter.
+
+DO NOT rebuild the application.
+
+Fix the existing Smart Fill implementation.
+
+The screenshot provided by the user shows a real form containing:
+
+- First name
+- Last name
+- Email
+- Phone number
+- LinkedIn profile URL
+- Resume upload
+- Next button
+
+The current Smart Fill floating control displays:
+
+"No approved matching fields found on this page."
+
+This behavior is incorrect.
+
+The page clearly contains fillable fields.
+
+The Smart Fill engine must be fixed so that it detects supported fields, maps them against the locally saved profile/document JSON, and fills them correctly.
+
+---
+
+# 1. CORE REQUIREMENT
+
+The Smart Fill architecture must be:
+
+DOCUMENT/PROFILE SETUP
+        ↓
+LOCAL OCR / PARSING
+        ↓
+STRUCTURED PROFILE JSON
+        ↓
+ENCRYPTED LOCAL STORAGE
+        ↓
+SMART FILL
+        ↓
+CURRENT FORM ANALYSIS
+        ↓
+FIELD SEMANTIC MATCHING
+        ↓
+LOCAL JSON VALUE
+        ↓
+USER CONFIRMATION WHERE REQUIRED
+        ↓
+FILL FORM
+
+Do NOT run OCR again when the user presses Smart Fill.
+
+The previously extracted structured data is the source of truth.
+
+---
+
+# 2. IMPORTANT CHANGE
+
+The current logic appears to be too restrictive:
+
+```text
+Detect field
+    ↓
+Require "approved matching field"
+    ↓
+If exact approved mapping does not exist
+    ↓
+"No approved matching fields found"
+````
+
+This must NOT be the primary detection strategy.
+
+Instead:
+
+```text
+Detect candidate field
+        ↓
+Normalize field metadata
+        ↓
+Determine semantic meaning
+        ↓
+Match against local profile schema
+        ↓
+Calculate confidence
+        ↓
+Accept high-confidence match
+        ↓
+Ask user for ambiguous/sensitive matches
+```
+
+---
+
+# 3. DO NOT DEPEND ONLY ON EXACT FIELD NAMES
+
+Do NOT require an exact match such as:
+
+```text
+first_name === profile.firstName
+```
+
+Websites can use:
+
+```text
+first_name
+firstname
+first-name
+given_name
+givenName
+candidate_first_name
+applicant_first_name
+fname
+```
+
+All of these should be considered possible aliases for:
+
+```text
+profile.firstName
+```
+
+Likewise:
+
+```text
+last_name
+lastname
+last-name
+surname
+family_name
+familyName
+candidate_last_name
+lname
+```
+
+should map to:
+
+```text
+profile.lastName
+```
+
+---
+
+# 4. FIELD DETECTION LAYERS
+
+Use multiple signals.
+
+Priority:
+
+```text
+1. autocomplete
+2. accessibility label
+3. explicit <label>
+4. name attribute
+5. id
+6. placeholder
+7. aria-label
+8. surrounding text
+9. input type
+10. semantic context
+```
+
+Do NOT rely on only one attribute.
+
+---
+
+# 5. EXAMPLE FROM USER SCREENSHOT
+
+The form contains:
+
+```text
+First name
+Last name
+Email
+Phone number
+LinkedIn profile URL
+Upload your resume
+```
+
+The engine must recognize these.
+
+Example:
+
+```text
+"First name"
+    ↓
+profile.firstName
+```
+
+```text
+"Last name"
+    ↓
+profile.lastName
+```
+
+```text
+"Email"
+    ↓
+profile.email
+```
+
+```text
+"Phone number"
+    ↓
+profile.phone
+```
+
+```text
+"LinkedIn profile URL"
+    ↓
+profile.linkedinUrl
+```
+
+```text
+"Upload your resume"
+    ↓
+documents.resume
+```
+
+---
+
+# 6. PROFILE SCHEMA
+
+The local profile should contain all supported fields.
+
+Example:
+
+```json
+{
+  "profile": {
+    "firstName": "",
+    "lastName": "",
+    "fullName": "",
+    "email": "",
+    "phone": "",
+    "dateOfBirth": "",
+    "gender": "",
+    "linkedinUrl": "",
+    "address": {
+      "line1": "",
+      "line2": "",
+      "city": "",
+      "district": "",
+      "state": "",
+      "pincode": ""
+    }
+  },
+  "documents": {
+    "aadhaar": {
+      "available": false,
+      "number": "",
+      "localUri": ""
+    },
+    "pan": {
+      "available": false,
+      "number": "",
+      "localUri": ""
+    },
+    "resume": {
+      "available": false,
+      "localUri": ""
+    }
+  }
+}
+```
+
+Use the actual project's schema if it already exists.
+
+DO NOT create a duplicate profile database.
+
+There must be ONE canonical local profile source.
+
+---
+
+# 7. PROFILE MUST PERSIST
+
+If the user previously entered/saved:
+
+```text
+First Name
+Last Name
+Email
+Phone
+LinkedIn
+Address
+```
+
+Smart Fill must retrieve those values from the local encrypted vault.
+
+It must NOT return:
+
+```text
+undefined
+null
+empty string
+```
+
+when the profile already contains the value.
+
+---
+
+# 8. DOCUMENT UPLOAD STATUS
+
+When a document is successfully uploaded and analyzed:
+
+```text
+Aadhaar
+PAN
+Resume
+Passport
+Driving Licence
+```
+
+the corresponding document status must immediately become:
+
+```text
+AVAILABLE
+```
+
+Example:
+
+```json
+{
+  "documents": {
+    "aadhaar": {
+      "available": true
+    },
+    "pan": {
+      "available": true
+    }
+  }
+}
+```
+
+The UI should show a checkmark:
+
+```text
+✓ Aadhaar
+✓ PAN
+✓ Resume
+```
+
+when the document is actually stored successfully.
+
+---
+
+# 9. IMPORTANT — CHECKMARK MUST REPRESENT REAL STATE
+
+Do NOT show a checkmark merely because the user opened the upload screen.
+
+Correct:
+
+```text
+User selects file
+    ↓
+File successfully copied to secure local vault
+    ↓
+Encryption succeeds
+    ↓
+Metadata saved
+    ↓
+available = true
+    ↓
+✓
+```
+
+If any step fails:
+
+```text
+available = false
+```
+
+and show an appropriate error.
+
+---
+
+# 10. DOCUMENT ANALYSIS FLOW
+
+When the user uploads Aadhaar/PAN/etc.:
+
+```text
+Select file
+    ↓
+Copy into temporary processing area
+    ↓
+OCR locally
+    ↓
+Extract fields
+    ↓
+Validate extracted fields
+    ↓
+Show review
+    ↓
+User confirms
+    ↓
+Save structured JSON
+    ↓
+Encrypt document
+    ↓
+Save document metadata
+    ↓
+Mark document AVAILABLE
+    ↓
+Show ✓
+```
+
+This should happen ONCE during document setup.
+
+---
+
+# 11. DO NOT RE-OCR DURING SMART FILL
+
+When Smart Fill starts:
+
+WRONG:
+
+```text
+Smart Fill
+ ↓
+Open Aadhaar image
+ ↓
+OCR
+ ↓
+Extract data
+ ↓
+Fill
+```
+
+CORRECT:
+
+```text
+Smart Fill
+ ↓
+Load local encrypted profile
+ ↓
+Load local document metadata
+ ↓
+Analyze current form
+ ↓
+Map fields
+ ↓
+Fill
+```
+
+---
+
+# 12. FORM ANALYSIS
+
+When the user presses:
+
+```text
+START SMART FILL
+```
+
+perform:
+
+```text
+Current page
+    ↓
+Detect supported form
+    ↓
+Collect candidate fields
+    ↓
+Normalize field metadata
+    ↓
+Classify fields
+    ↓
+Map against local profile
+```
+
+Do not immediately reject the page.
+
+---
+
+# 13. NORMALIZED FIELD OBJECT
+
+Create an internal representation such as:
+
+```json
+{
+  "fieldId": "input_12",
+  "type": "text",
+  "label": "First name",
+  "name": "first_name",
+  "placeholder": "Enter your first name",
+  "autocomplete": "",
+  "ariaLabel": "",
+  "semanticType": "firstName",
+  "confidence": 0.98
+}
+```
+
+Then map:
+
+```text
+semanticType = firstName
+        ↓
+profile.firstName
+```
+
+---
+
+# 14. SEMANTIC FIELD CLASSIFIER
+
+Create deterministic rules first.
+
+Example:
+
+```text
+first name
+firstname
+first_name
+given name
+given_name
+givenname
+fname
+```
+
+→
+
+```text
+firstName
+```
+
+---
+
+```text
+last name
+lastname
+last_name
+surname
+family name
+family_name
+lname
+```
+
+→
+
+```text
+lastName
+```
+
+---
+
+```text
+email
+email address
+e-mail
+mail
+```
+
+→
+
+```text
+email
+```
+
+---
+
+```text
+phone
+phone number
+mobile
+mobile number
+contact number
+telephone
+tel
+```
+
+→
+
+```text
+phone
+```
+
+---
+
+```text
+linkedin
+linkedin profile
+linkedin profile url
+linkedin URL
+```
+
+→
+
+```text
+linkedinUrl
+```
+
+---
+
+```text
+date of birth
+dob
+birth date
+birthdate
+```
+
+→
+
+```text
+dateOfBirth
+```
+
+---
+
+# 15. LABEL + PLACEHOLDER COMBINATION
+
+Example:
+
+```text
+Label:
+First name
+
+Placeholder:
+Enter your first name
+```
+
+Combine both signals.
+
+This should produce a very high confidence:
+
+```text
+semanticType = firstName
+confidence >= 0.95
+```
+
+---
+
+# 16. PHONE FIELD
+
+The screenshot contains:
+
+```text
+Phone number
++91
+```
+
+The engine must recognize the phone input even if the country selector is a separate UI component.
+
+Do NOT confuse:
+
+```text
++91
+```
+
+with the user's phone number.
+
+Map only the actual phone input.
+
+If the form already has:
+
+```text
+Country = India
++91
+```
+
+do not insert +91 twice.
+
+Example:
+
+```text
+Correct:
++91 | 9876543210
+
+Incorrect:
++91 | +919876543210
+```
+
+Normalize the phone value before filling.
+
+---
+
+# 17. LINKEDIN FIELD
+
+The screenshot contains:
+
+```text
+LinkedIn profile URL
+```
+
+Map to:
+
+```text
+profile.linkedinUrl
+```
+
+If the user has no LinkedIn URL:
+
+```text
+Do NOT invent one.
+```
+
+Leave it empty and notify the user if necessary.
+
+---
+
+# 18. RESUME UPLOAD
+
+The screenshot contains:
+
+```text
+Upload your resume (in English)
+Click to upload or drag & drop (.pdf)
+```
+
+This should be detected as:
+
+```text
+documentType = RESUME
+acceptedType = PDF
+```
+
+If the user has a locally stored resume:
+
+```text
+documents.resume.available == true
+```
+
+then:
+
+```text
+Use saved resume
+```
+
+through the supported browser/native file-selection mechanism.
+
+Do not convert the resume to OCR text just to upload it.
+
+---
+
+# 19. FILE TYPE VALIDATION
+
+Before using a document for upload:
+
+```text
+Expected:
+PDF
+
+Actual:
+PDF
+```
+
+PASS.
+
+If:
+
+```text
+Expected:
+PDF
+
+Actual:
+JPG
+```
+
+do not silently upload it.
+
+Show:
+
+```text
+This form accepts PDF files.
+Your saved document is not a compatible file type.
+```
+
+---
+
+# 20. APPROVAL SYSTEM FIX
+
+The current error:
+
+```text
+No approved matching fields found on this page.
+```
+
+must only occur when:
+
+```text
+No supported fields were detected
+```
+
+NOT when:
+
+```text
+Fields were detected but the old approval whitelist did not contain them.
+```
+
+Separate:
+
+```text
+DETECTED
+MATCHED
+APPROVED
+FILLED
+```
+
+These are different states.
+
+---
+
+# 21. FIELD STATE MODEL
+
+Use:
+
+```text
+DETECTED
+    ↓
+MATCHED
+    ↓
+APPROVED
+    ↓
+FILLED
+```
+
+Example:
+
+```json
+{
+  "label": "First name",
+  "semanticType": "firstName",
+  "matchedValue": "John",
+  "confidence": 0.98,
+  "status": "APPROVED"
+}
+```
+
+---
+
+# 22. USER CONFIRMATION
+
+For ordinary profile fields:
+
+```text
+First name
+Last name
+Email
+Phone
+```
+
+you can use the saved profile according to the user's Smart Fill settings.
+
+For sensitive information:
+
+```text
+Aadhaar number
+PAN
+Passport
+```
+
+require appropriate user confirmation before disclosure.
+
+---
+
+# 23. FORM PREVIEW
+
+Before filling a complex form, optionally show:
+
+```text
+Found 6 fields
+
+✓ First name
+✓ Last name
+✓ Email
+✓ Phone
+✓ LinkedIn
+✓ Resume
+```
+
+Then:
+
+```text
+[ Fill Form ]
+```
+
+For simple forms, this can be automatic if the user has already enabled that behavior.
+
+---
+
+# 24. IMPORTANT — ACCESSIBILITY / BROWSER LIMITATION
+
+The Android floating overlay itself does NOT automatically give the application direct access to Chrome's HTML DOM.
+
+Do not pretend that:
+
+```text
+Floating overlay
+        ↓
+Directly read Chrome HTML
+```
+
+is universally available.
+
+The implementation must use a supported integration mechanism.
+
+Possible mechanisms depend on the architecture:
+
+```text
+Browser extension
+Android AccessibilityService
+Custom browser integration
+Supported WebView bridge
+```
+
+For external Chrome pages, choose the mechanism actually supported by the existing project.
+
+---
+
+# 25. IF USING ANDROID ACCESSIBILITY
+
+If the existing implementation uses Android AccessibilityService:
+
+Read only the relevant accessibility tree.
+
+Use:
+
+```text
+text
+contentDescription
+viewIdResourceName
+className
+hintText
+inputType
+editable state
+clickable state
+```
+
+Use these signals to identify fields.
+
+Do NOT continuously capture the screen.
+
+Do NOT collect unrelated application content.
+
+---
+
+# 26. IF USING WEB EXTENSION / DOM BRIDGE
+
+If the implementation uses a browser-side bridge:
+
+Read:
+
+```text
+document.querySelectorAll('input, select, textarea, [contenteditable="true"]')
+```
+
+and extract:
+
+```text
+name
+id
+type
+placeholder
+autocomplete
+aria-label
+labels
+```
+
+Do not scan unrelated page data.
+
+---
+
+# 27. FIELD FILLING
+
+For text fields:
+
+```text
+First name
+Last name
+Email
+Phone
+LinkedIn
+```
+
+fill the mapped value.
+
+After filling:
+
+```text
+Verify actual field value
+```
+
+Do not assume the input succeeded.
+
+---
+
+# 28. CONTROLLED INPUTS
+
+Some modern React/Vue/Angular websites use controlled inputs.
+
+Simply changing:
+
+```text
+element.value
+```
+
+may not update the application's internal state.
+
+The implementation must trigger the appropriate input/change events through the supported browser integration.
+
+After filling:
+
+```text
+Read field value again
+```
+
+and verify it.
+
+---
+
+# 29. DROPDOWN / SELECT
+
+If a field is:
+
+```text
+<select>
+```
+
+or a supported custom dropdown:
+
+```text
+Gender
+State
+Country
+```
+
+detect available options.
+
+Only select an option if a reliable match exists.
+
+Example:
+
+```text
+profile.gender = Female
+```
+
+→
+
+```text
+Female
+```
+
+Do not select the first option by default.
+
+---
+
+# 30. CHECKBOXES
+
+Do not automatically check:
+
+```text
+Terms and Conditions
+Privacy Policy
+Consent
+Marketing consent
+```
+
+unless the user has explicitly configured such behavior and it is legally/UX appropriate.
+
+The screenshot contains:
+
+```text
+By providing your information...
+you confirm that...
+```
+
+This is a consent/legal statement.
+
+Do NOT automatically agree on the user's behalf.
+
+---
+
+# 31. SUBMIT BUTTON
+
+Never automatically press:
+
+```text
+Next
+Submit
+Apply
+Send
+Continue
+Pay
+Confirm
+```
+
+After fields are filled:
+
+```text
+STOP
+```
+
+Let the user review.
+
+---
+
+# 32. DEBUG MODE
+
+Add a developer-only Smart Fill diagnostics screen.
+
+Display:
+
+```text
+Detected fields: 6
+Matched fields: 6
+Approved fields: 6
+Filled fields: 6
+Failed fields: 0
+```
+
+For each field:
+
+```text
+Label:
+Semantic type:
+Confidence:
+Source JSON path:
+Fill status:
+```
+
+Example:
+
+```text
+First name
+→ firstName
+→ profile.firstName
+→ confidence 0.98
+→ FILLED
+```
+
+This is essential for debugging the current "No approved matching fields" problem.
+
+---
+
+# 33. NEVER SHOW GENERIC FAILURE
+
+Instead of:
+
+```text
+No approved matching fields found on this page.
+```
+
+show meaningful results.
+
+Example:
+
+```text
+Found 6 supported fields.
+
+✓ First name
+✓ Last name
+✓ Email
+✓ Phone
+✓ LinkedIn
+✓ Resume
+
+Ready to fill.
+```
+
+If nothing is detected:
+
+```text
+No supported form fields were detected on this page.
+```
+
+If fields are detected but values are missing:
+
+```text
+Found 6 fields, but 2 values are missing from your saved profile.
+```
+
+Example:
+
+```text
+Missing:
+• LinkedIn URL
+• Resume
+```
+
+---
+
+# 34. MISSING PROFILE DATA
+
+If website asks:
+
+```text
+LinkedIn URL
+```
+
+but profile does not contain it:
+
+DO NOT:
+
+* invent it
+* guess it
+* fill random data
+
+Instead:
+
+```text
+LinkedIn URL
+Not available in saved profile
+```
+
+The user can enter it manually.
+
+---
+
+# 35. PROFILE SYNCHRONIZATION
+
+When user edits profile information inside Secure Vault:
+
+```text
+Profile Edit
+    ↓
+Validate
+    ↓
+Encrypt
+    ↓
+Save canonical profile
+    ↓
+Smart Fill reads updated profile
+```
+
+Do NOT maintain a stale copy inside Smart Fill.
+
+---
+
+# 36. DOCUMENT SYNCHRONIZATION
+
+When a document is:
+
+```text
+Added
+Replaced
+Deleted
+```
+
+update the canonical local vault.
+
+Smart Fill must always query current document availability.
+
+Example:
+
+```text
+PAN deleted
+    ↓
+documents.pan.available = false
+    ↓
+Smart Fill must NOT offer PAN
+```
+
+---
+
+# 37. CACHE RULE
+
+You may cache:
+
+```text
+Form field metadata
+Semantic mappings
+```
+
+but do NOT cache stale personal values.
+
+Personal values should always come from the current local profile/vault.
+
+---
+
+# 38. PERFORMANCE
+
+The website flow should NOT invoke OCR.
+
+Target:
+
+```text
+Load local profile:
+~10–100 ms
+
+Field detection:
+~100–500 ms
+
+Semantic mapping:
+~50–300 ms
+
+Simple form filling:
+~200–1000 ms
+```
+
+Target total for a normal supported form:
+
+```text
+~0.5–2 seconds
+```
+
+These are targets, not guarantees.
+
+---
+
+# 39. SCREENSHOT REPRODUCTION TEST
+
+Use the supplied screenshot as the primary regression test.
+
+The test page contains:
+
+```text
+First name
+Last name
+Email
+Phone number
+LinkedIn profile URL
+Resume upload
+Next
+```
+
+Expected Smart Fill detection:
+
+```text
+Detected: 6 supported fields
+```
+
+Expected mappings:
+
+```text
+First name
+→ profile.firstName
+
+Last name
+→ profile.lastName
+
+Email
+→ profile.email
+
+Phone number
+→ profile.phone
+
+LinkedIn profile URL
+→ profile.linkedinUrl
+
+Resume upload
+→ documents.resume
+```
+
+Expected result:
+
+```text
+No "No approved matching fields found" error.
+```
+
+---
+
+# 40. REGRESSION TESTS
+
+Test these variations:
+
+```text
+First Name
+first_name
+firstname
+Given Name
+First name *
+FIRST NAME
+```
+
+All should map to:
+
+```text
+firstName
+```
+
+Test:
+
+```text
+Email
+Email address
+E-mail
+email_address
+```
+
+→
+
+```text
+email
+```
+
+Test:
+
+```text
+Phone
+Phone number
+Mobile
+Mobile number
+Contact number
+```
+
+→
+
+```text
+phone
+```
+
+---
+
+# 41. DOCUMENT CHECKMARK TEST
+
+Test:
+
+```text
+Upload Aadhaar
+ ↓
+OCR
+ ↓
+Review
+ ↓
+Confirm
+```
+
+Expected:
+
+```text
+✓ Aadhaar
+```
+
+Then close and reopen the app.
+
+Expected:
+
+```text
+✓ Aadhaar
+```
+
+must remain.
+
+Then delete Aadhaar.
+
+Expected:
+
+```text
+Aadhaar
+```
+
+without checkmark.
+
+---
+
+# 42. APP RESTART TEST
+
+After:
+
+```text
+Upload documents
+Save profile
+Close app
+```
+
+reopen.
+
+Expected:
+
+```text
+Profile data still available
+Documents still available
+Checkmarks still correct
+Smart Fill can read profile
+```
+
+No server should be required.
+
+---
+
+# 43. FINAL ACCEPTANCE CRITERIA
+
+The fix is complete only when:
+
+* [ ] Screenshot form fields are detected
+* [ ] First name maps correctly
+* [ ] Last name maps correctly
+* [ ] Email maps correctly
+* [ ] Phone maps correctly
+* [ ] LinkedIn maps correctly
+* [ ] Resume upload is recognized
+* [ ] Existing profile values are loaded from canonical local storage
+* [ ] Existing document status is persistent
+* [ ] Uploaded documents show a checkmark only after successful storage
+* [ ] Smart Fill does not rerun OCR
+* [ ] Smart Fill does not require an "approved whitelist" for every normal field
+* [ ] Semantic field matching works
+* [ ] Controlled inputs are actually updated
+* [ ] Filled values are verified after insertion
+* [ ] Missing values are reported instead of guessed
+* [ ] Sensitive values receive appropriate confirmation
+* [ ] Consent/legal checkboxes are not automatically accepted
+* [ ] Submit/Next is never automatically clicked
+* [ ] Debug diagnostics show detection → mapping → filling
+* [ ] Generic "No approved matching fields" error is removed/replaced with accurate status
+* [ ] The screenshot scenario successfully fills supported fields
+
+---
+
+# FINAL EXPECTED RESULT
+
+User opens a website like the screenshot.
+
+Floating Smart Fill:
+
+```text
+START SMART FILL
+CLOSE
+```
+
+User taps:
+
+```text
+START SMART FILL
+```
+
+System:
+
+```text
+Detect form
+      ↓
+Find:
+First name
+Last name
+Email
+Phone
+LinkedIn
+Resume
+      ↓
+Load encrypted local profile JSON
+      ↓
+Map fields
+      ↓
+Verify values
+      ↓
+Fill supported fields
+      ↓
+STOP
+```
+
+No OCR is performed during this step.
+
+No cloud request is made.
+
+No document is reprocessed.
+
+No generic "No approved matching fields" message is shown when valid fields exist.
+
+The user's existing local Profile/Vault data is the canonical source for Smart Fill.
+
+```
+
+### सबसे बड़ा bug कहाँ है?
+
+तुम्हारे screenshot के हिसाब से मैं agent को **सबसे पहले `approved matching fields` वाली condition debug करने** को कहूँगा। क्योंकि वहाँ likely flow कुछ ऐसा है:
+
+`HTML/accessibility fields detected → whitelist/approval check → zero approved → error`
+
+जबकि होना चाहिए:
+
+`fields detected → semantic mapping → local profile JSON → confidence → fill`
+
+और **“uploaded” का checkmark भी सिर्फ UI state नहीं होना चाहिए** — actual encrypted local file + metadata successfully save होने के बाद ही `available: true` होना चाहिए। इससे app restart के बाद भी Smart Fill को पता रहेगा कि कौन-सा document मौजूद है।
+```

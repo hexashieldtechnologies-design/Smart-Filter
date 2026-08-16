@@ -1,0 +1,2184 @@
+हाँ। अब इस requirement को **“नई feature list” नहीं बल्कि existing project का master continuation specification** मानना चाहिए। सबसे important बात: **पुराने working logic को replace नहीं करना है; उसके ऊपर new UI + Smart Fill flow integrate करना है।**
+
+और एक genuine technical correction भी है: Chrome में किसी भी arbitrary website का raw `HTML/DOM` सीधे पढ़ लेना Android app के लिए universally available नहीं है। Android में practical routes **Autofill Framework** और, जहाँ justified/allowed हो, **AccessibilityService** हैं; AccessibilityService visible/accessibility window content और nodes पर काम कर सकता है, लेकिन यह unrestricted Chrome DOM API नहीं है। ([Android Developers][1]) Google Play पर Accessibility API के use के लिए भी declaration/disclosure requirements हैं और इसे narrower APIs के बजाय तभी इस्तेमाल करना चाहिए जब जरूरी हो। ([Google Support][2])
+
+नीचे वाला पूरा content अपने **AI coding agent/developer को master prompt** की तरह देना।
+
+---
+
+# `MASTER_SECURE_VAULT_SMART_FILL_VNEXT.md`
+
+```md
+# MASTER IMPLEMENTATION PROMPT
+# Secure Vault — Existing Logic Preservation + Dashboard + Universal Smart Fill vNext
+
+## 1. ABSOLUTE RULE — DO NOT BREAK EXISTING LOGIC
+
+This is NOT a rewrite.
+
+This is NOT a new application.
+
+This is a continuation of the existing Secure Vault project.
+
+Before changing anything, inspect the complete existing repository and understand every currently implemented feature.
+
+### Non-negotiable requirement
+
+ALL previously working functionality must continue to work.
+
+Do not replace working architecture merely to implement the new UI.
+
+Do not create duplicate systems.
+
+Do not create:
+
+- DocumentStoreV2
+- ProfileStoreV2
+- SmartFillV2
+- OverlayServiceV2
+- AuthV2
+- EncryptionV2
+
+unless the existing implementation is genuinely unusable and the migration is explicitly required.
+
+Prefer:
+
+Existing module
+    ↓
+extend/fix
+    ↓
+new functionality
+
+NOT:
+
+Existing module
+    ↓
+delete
+    ↓
+completely new implementation
+
+
+# 2. EXISTING FUNCTIONALITY THAT MUST REMAIN WORKING
+
+The following existing functionality must be preserved.
+
+## Security
+
+- App lock
+- Biometric authentication
+- Passcode/password fallback
+- Secure session
+- Existing biometric session behavior
+- Root/jailbreak detection if already implemented
+- Secure local storage
+- Encryption
+- Android Keystore integration
+- iOS Keychain integration
+
+## Document Vault
+
+- Aadhaar upload
+- PAN upload
+- Other document upload
+- Image/document storage
+- OCR
+- Document parsing
+- Structured JSON extraction
+- Local persistence
+- Document status/checkmark
+- Document deletion
+- Document review
+- Existing profile data
+
+## Local-first architecture
+
+Sensitive data remains local.
+
+No sensitive document image or identity JSON should be uploaded to a cloud AI service.
+
+## Smart Fill
+
+Preserve:
+
+- Start / GO Smart Fill
+- Overlay permission
+- Floating Smart Fill control
+- Accessibility integration if already implemented
+- Existing native bridge
+- Existing form detection
+- Existing field matching
+- Existing local JSON lookup
+
+Fix them where required; do not remove them.
+
+---
+
+# 3. EXISTING DATA FLOW MUST REMAIN LOCAL-FIRST
+
+Document upload:
+
+User selects Aadhaar/PAN
+        ↓
+Secure local storage
+        ↓
+OCR
+        ↓
+Document parser
+        ↓
+Structured JSON
+        ↓
+User review
+        ↓
+Encrypted local storage
+
+After this point:
+
+SMART FILL MUST NOT RUN OCR AGAIN.
+
+Correct:
+
+Document uploaded once
+        ↓
+OCR once
+        ↓
+JSON created
+        ↓
+JSON saved locally
+
+Later:
+
+Website
+        ↓
+Smart Fill
+        ↓
+Read local JSON
+        ↓
+Match fields
+        ↓
+Fill
+
+
+Incorrect:
+
+Website
+        ↓
+Open Aadhaar image
+        ↓
+OCR again
+        ↓
+Parse again
+        ↓
+Fill
+
+
+# 4. NEW DASHBOARD
+
+The default dashboard must be simple.
+
+NO BOTTOM TAB BAR in this iteration.
+
+The top area must contain:
+
+┌────────────────────────────────────────────┐
+│ Search documents/fields...              ☰ │
+└────────────────────────────────────────────┘
+
+The three-line menu opens the existing slide/drawer navigation.
+
+Do not introduce a bottom navigation bar.
+
+---
+
+# 5. SEARCH BAR
+
+Search bar is the first major element on the dashboard.
+
+Placeholder:
+
+"Search documents, fields..."
+
+Search must work against local vault data.
+
+Examples:
+
+Search:
+
+Aadhaar
+
+Result:
+
+Aadhaar Card
+
+Full Name
+Father's Name
+Mother's Name
+Aadhaar Number
+
+
+Search:
+
+PAN
+
+Result:
+
+PAN Card
+
+PAN Number
+Name
+Date of Birth
+
+
+Search:
+
+Father
+
+Result:
+
+Father's Name
+
+
+Search:
+
+1234
+
+If permitted by existing security rules:
+
+matching local record/field should be shown.
+
+
+## Search must NOT call the server.
+
+Search source:
+
+Encrypted Local Vault
+        ↓
+Local decrypted session data
+        ↓
+Search index/query
+        ↓
+UI
+
+
+# 6. DOCUMENT LIST BELOW SEARCH
+
+Below the search bar:
+
+┌────────────────────────────┐
+│ + Add                      │
+└────────────────────────────┘
+
+Then document cards:
+
+┌────────────────────────────┐
+│ ✓ Aadhaar Card             │
+│ Full Name                  │
+│ Aadhaar Number             │
+│ Father's Name              │
+└────────────────────────────┘
+
+┌────────────────────────────┐
+│ ✓ PAN Card                 │
+│ Name                       │
+│ PAN Number                 │
+└────────────────────────────┘
+
+The checkmark means:
+
+Document successfully exists
+AND
+its structured data has been persisted.
+
+Do not show ✓ merely because the file picker selected a file.
+
+
+# 7. ADD BUTTON
+
+The Add button must be a NORMAL application UI button.
+
+It is NOT the external floating overlay.
+
+Position:
+
+Search
+↓
+Add
+↓
+Documents
+
+Example:
+
+[ + Add ]
+
+Tap:
+
+Add
+ ↓
+Add Document / Add Record
+
+
+# 8. ADD DOCUMENT / MANUAL RECORD
+
+The user must be able to manually create a record.
+
+Example:
+
+Document Name:
+
+[Aadhaar Card]
+
+Then:
+
+Field Name              Type        Value
+
+Aadhaar Number          number      XXXXXXXX
+Full Name               text        Example Name
+Father's Name           text        Example Father
+Mother's Name           text        Example Mother
+Date of Birth           date        DD/MM/YYYY
+Gender                  text        Male
+Address                 address     ...
+City                    text        ...
+District                text        ...
+State                   text        ...
+PIN Code                number      ...
+
+
+# 9. CUSTOM FIELD SUPPORT
+
+Do NOT hard-code the application to Aadhaar and PAN only.
+
+Every document can have custom fields.
+
+Supported logical field types:
+
+- text
+- number
+- email
+- phone
+- date
+- address
+- document_number
+- image
+- file
+- URL
+- custom
+
+Example:
+
+Document:
+
+Driving Licence
+
+Fields:
+
+Licence Number
+Name
+Date of Birth
+Address
+Issue Date
+Expiry Date
+Vehicle Class
+
+
+# 10. CANONICAL JSON
+
+There must be ONE canonical structured record.
+
+Example:
+
+{
+  "recordId": "local-id",
+  "documentType": "aadhaar",
+  "displayName": "Aadhaar Card",
+  "fields": {
+    "aadhaarNumber": {
+      "label": "Aadhaar Number",
+      "type": "document_number",
+      "value": "LOCAL_VALUE"
+    },
+    "fullName": {
+      "label": "Full Name",
+      "type": "text",
+      "value": "LOCAL_VALUE"
+    },
+    "fatherName": {
+      "label": "Father's Name",
+      "type": "text",
+      "value": "LOCAL_VALUE"
+    },
+    "motherName": {
+      "label": "Mother's Name",
+      "type": "text",
+      "value": "LOCAL_VALUE"
+    }
+  }
+}
+
+IMPORTANT:
+
+If the current project already has a JSON schema:
+
+DO NOT create a second incompatible schema.
+
+Extend/migrate the existing schema safely.
+
+
+# 11. PROFILE + DOCUMENT DATA
+
+Profile remains the canonical source for reusable personal information.
+
+Example:
+
+profile.fullName
+profile.firstName
+profile.lastName
+profile.email
+profile.phone
+profile.dateOfBirth
+profile.gender
+profile.address
+profile.city
+profile.state
+profile.pinCode
+
+
+Documents contain document-specific values.
+
+Example:
+
+documents.aadhaar.aadhaarNumber
+
+documents.pan.panNumber
+
+
+# 12. SMART FILL DATA RESOLUTION
+
+Smart Fill must use the same canonical local data used by:
+
+- Copy
+- Share
+- Document display
+- Smart Fill
+
+
+Architecture:
+
+              LOCAL VAULT
+                   |
+        ┌──────────┼──────────┐
+        ↓          ↓          ↓
+      Copy       Share     Smart Fill
+
+
+There must NOT be three separate copies of the same personal information.
+
+
+# 13. GO / SMART FILL BUTTON
+
+Dashboard must provide a clear:
+
+[ GO — SMART FILL ]
+
+button.
+
+When user taps GO:
+
+1. Check app authentication/session.
+2. Check overlay permission.
+3. Check required Smart Fill capability.
+4. Check accessibility/autofill capability where applicable.
+5. Start Smart Fill.
+6. Display floating control.
+7. User can minimize application.
+
+The floating control must NOT disappear simply because the main app was minimized.
+
+
+# 14. PERMISSION FLOW
+
+If overlay permission is missing:
+
+GO
+ ↓
+Check permission
+ ↓
+Permission missing
+ ↓
+Open Android Display Over Other Apps / overlay settings
+ ↓
+User enables
+ ↓
+Return
+ ↓
+Verify permission
+ ↓
+Continue
+
+
+DO NOT send the user to generic:
+
+App Info
+
+when the required permission is actually a special-access setting.
+
+
+# 15. ACCESSIBILITY FLOW
+
+If AccessibilityService is required:
+
+GO
+ ↓
+Check AccessibilityService
+ ↓
+Not enabled
+ ↓
+Open Accessibility settings
+ ↓
+User enables service
+ ↓
+Return
+ ↓
+Verify actual service state
+ ↓
+Continue
+
+
+Never show:
+
+"Smart Fill Active"
+
+when the native service is not actually connected.
+
+
+# 16. FLOATING CONTROL
+
+When Smart Fill is active and app is minimized:
+
+                    ●
+
+A small round floating control must remain visible.
+
+The floating control should remain active until:
+
+- user closes it
+- user stops Smart Fill
+- system terminates the service
+- app explicitly disables it
+
+
+# 17. FLOATING CONTROL MENU
+
+When the user taps the round floating control:
+
+Show exactly TWO primary actions.
+
+Example:
+
+┌─────────────────────────────┐
+│        SMART FILL           │
+│                             │
+│     [ AUTO FILL ]           │
+│     [ CLOSE ]               │
+│                             │
+└─────────────────────────────┘
+
+
+No third unnecessary primary action.
+
+## Button 1
+
+AUTO FILL
+
+## Button 2
+
+CLOSE
+
+
+# 18. AUTO FILL
+
+AUTO FILL is the main Smart Fill feature.
+
+User:
+
+Chrome
+ ↓
+Website
+ ↓
+Form
+ ↓
+Tap floating Smart Fill
+ ↓
+AUTO FILL
+
+
+Then:
+
+Detect fields
+ ↓
+Read local JSON
+ ↓
+Map fields
+ ↓
+Fill supported fields
+ ↓
+Verify
+ ↓
+Show result
+
+
+The user must NOT have to manually select every field.
+
+
+# 19. AUTO FILL EXAMPLE
+
+Website:
+
+Full Name
+[________________]
+
+Father's Name
+[________________]
+
+Mother's Name
+[________________]
+
+Aadhaar Number
+[________________]
+
+Phone
+[________________]
+
+
+User taps:
+
+AUTO FILL
+
+
+System:
+
+Full Name
+→ profile.fullName
+
+Father's Name
+→ Aadhaar.fatherName
+
+Mother's Name
+→ Aadhaar.motherName
+
+Aadhaar Number
+→ Aadhaar.aadhaarNumber
+
+Phone
+→ profile.phone
+
+
+Then fill all confidently matched fields.
+
+
+# 20. SINGLE-FIELD FILL
+
+Automatic fill is primary.
+
+But user must also be able to fill ONE field manually.
+
+Example:
+
+Website:
+
+Name
+[________________]
+
+
+User focuses Name field.
+
+Tap Smart Fill.
+
+Show:
+
+Aadhaar Card
+PAN Card
+Profile
+Passport
+
+
+User selects:
+
+Aadhaar Card
+
+
+Then:
+
+Full Name
+Father's Name
+Mother's Name
+Aadhaar Number
+...
+
+
+User selects:
+
+Full Name
+
+
+Only the focused website field gets:
+
+Aadhaar.fullName
+
+
+# 21. FATHER'S NAME EXAMPLE
+
+Website field:
+
+Father's Name
+
+
+User:
+
+Tap field
+ ↓
+Smart Fill
+ ↓
+Aadhaar Card
+ ↓
+Father's Name
+ ↓
+Fill
+
+
+Only Father's Name should be inserted.
+
+Do not fill the entire form in single-field mode.
+
+
+# 22. AUTO FILL VS MANUAL MODE
+
+There are two logical modes.
+
+MODE A:
+
+AUTO FILL
+
+Fills all high-confidence compatible fields.
+
+MODE B:
+
+SELECT FIELD
+
+User chooses:
+
+Document
++
+Field
+
+and fills only the current field.
+
+
+# 23. FIELD MATCHING
+
+Do NOT require exact text matching.
+
+Normalize:
+
+lowercase
+trim spaces
+remove punctuation
+normalize underscores
+normalize hyphens
+normalize common abbreviations
+
+
+Examples:
+
+"Full Name"
+"full_name"
+"fullname"
+"Name"
+"Applicant Name"
+"Legal Name"
+
+can map to:
+
+profile.fullName
+
+
+Examples:
+
+"Aadhaar Number"
+"Aadhaar No"
+"Aadhaar No."
+"UID Number"
+"UID"
+
+can map to:
+
+documents.aadhaar.aadhaarNumber
+
+
+# 24. MATCHING PRIORITY
+
+Use:
+
+1. Explicit user selection
+2. Exact semantic match
+3. Strong alias match
+4. Context/document type
+5. Medium-confidence match → ask user
+6. Low confidence → do not fill
+
+
+NEVER guess sensitive identity fields.
+
+
+# 25. MULTIPLE POSSIBLE VALUES
+
+Example:
+
+Full Name exists in:
+
+Profile
+Aadhaar
+PAN
+Passport
+
+
+Default:
+
+profile.fullName
+
+
+But if user selects:
+
+Aadhaar Card → Full Name
+
+
+use:
+
+Aadhaar.fullName
+
+
+For:
+
+Aadhaar Number
+
+only Aadhaar document should be considered.
+
+For:
+
+PAN Number
+
+only PAN document should be considered.
+
+
+# 26. "NO APPROVED MATCHING FIELDS" BUG
+
+Fix the existing behavior where the UI says:
+
+"No approved matching fields"
+
+even though fields are detected and matching local data exists.
+
+
+Correct logic:
+
+Detect fields
+ ↓
+Normalize
+ ↓
+Classify
+ ↓
+Find local value
+ ↓
+Calculate confidence
+ ↓
+
+HIGH
+→ fill
+
+MEDIUM
+→ ask user
+
+LOW
+→ don't fill
+
+
+The system must distinguish:
+
+A. No fields detected
+
+B. Fields detected but no local value exists
+
+C. Fields detected and local values matched
+
+D. Fields detected but ambiguous
+
+The UI must show the correct state.
+
+
+# 27. FILL VERIFICATION
+
+Do not assume that a write operation succeeded.
+
+For each field:
+
+Detect
+ ↓
+Write
+ ↓
+Trigger appropriate input/change interaction
+ ↓
+Read field value again where platform allows
+ ↓
+Normalize
+ ↓
+Compare
+
+
+Result:
+
+✓ Filled
+
+or
+
+✕ Failed
+
+
+Only show successful fill after actual verification where possible.
+
+
+# 28. REAL BROWSER LIMITATION — IMPORTANT
+
+DO NOT IMPLEMENT A FAKE "READ ANY HTML" ENGINE.
+
+An ordinary Android application cannot universally execute:
+
+document.querySelector()
+
+inside another application's private Chrome page DOM.
+
+Chrome's internal DOM is not simply exposed to another app.
+
+
+Therefore:
+
+Android implementation should evaluate, in this order:
+
+1. Android Autofill Framework
+2. Appropriate Android accessibility-tree interaction
+3. Controlled WebView bridge when the application owns the WebView
+
+
+Android Autofill is specifically designed for services that fill views in other apps and is available from Android 8.0/API 26. 
+
+
+AccessibilityService can retrieve accessibility window content when the service declares the relevant capability and can interact with accessible nodes, but this is NOT equivalent to unrestricted raw HTML/DOM access.
+
+
+The developer must never claim:
+
+"Universal HTML access"
+
+unless the actual integration provides it.
+
+
+# 29. ANDROID AUTOFILL
+
+Evaluate Android Autofill Framework first for standard supported forms.
+
+Architecture:
+
+Android System
+      ↓
+Autofill Framework
+      ↓
+Secure Vault AutofillService
+      ↓
+Local Vault
+      ↓
+Field Matching
+      ↓
+Fill
+
+
+Use this where technically appropriate.
+
+Do not implement a custom accessibility solution for a use case that Android Autofill already handles correctly.
+
+
+# 30. ACCESSIBILITY FALLBACK / SPECIAL CASE
+
+For form interaction that cannot be handled through Android Autofill, use the existing AccessibilityService architecture only where justified.
+
+AccessibilityService may inspect the accessibility tree of supported windows and interact with exposed nodes.
+
+
+Do NOT assume every Chrome website exposes all fields.
+
+Some websites may:
+
+- expose incomplete accessibility information
+- use custom controls
+- use canvas
+- use shadow/custom components
+- expose fields differently
+- prevent reliable automation
+
+
+In those cases:
+
+Do not pretend success.
+
+Return:
+
+"Some fields could not be detected reliably."
+
+
+# 31. GOOGLE PLAY COMPLIANCE
+
+If AccessibilityService is used, implementation must comply with current Google Play policy.
+
+The app must:
+
+- clearly disclose accessibility-related data access/use
+- obtain required user consent
+- document the use in Play Console
+- use narrower APIs where possible
+- never use accessibility to bypass platform security controls
+- never hide the service from the user
+
+
+Do not mark the app as an accessibility tool unless it genuinely qualifies under the policy.
+
+
+# 32. FLOATING OVERLAY
+
+Android overlay UI should use the proper platform mechanism.
+
+For Android 8.0+, application overlays use:
+
+TYPE_APPLICATION_OVERLAY
+
+and require:
+
+SYSTEM_ALERT_WINDOW
+
+
+Do not use obsolete window types.
+
+
+# 33. FOREGROUND SERVICE
+
+If the existing implementation uses a foreground service to keep Smart Fill alive:
+
+the implementation must follow current Android foreground-service rules.
+
+
+Do NOT assume:
+
+"start service and it will stay forever."
+
+
+Android 12+ restricts background foreground-service starts.
+
+Android 14+ requires appropriate foreground-service type declarations and permissions.
+
+
+The service lifecycle must be truthful.
+
+
+# 34. SMART FILL STATE
+
+Single source of truth:
+
+smartFillState
+
+
+Possible states:
+
+STOPPED
+STARTING
+WAITING_FOR_PERMISSION
+READY
+ACTIVE
+FORM_DETECTED
+MATCHING
+FILLING
+VERIFYING
+COMPLETE
+ERROR
+
+
+Overlay state:
+
+overlayVisible
+
+
+Service state:
+
+serviceConnected
+
+
+Do not maintain unrelated duplicate booleans that can become inconsistent.
+
+
+# 35. MINIMIZE BEHAVIOR
+
+Current bug:
+
+Start Smart Fill
+ ↓
+Minimize app
+ ↓
+Floating disappears
+
+
+This must be fixed.
+
+
+Correct:
+
+Start Smart Fill
+ ↓
+Floating visible
+ ↓
+Minimize app
+ ↓
+Floating remains
+ ↓
+Open Chrome
+ ↓
+Open form
+ ↓
+Tap floating
+ ↓
+Auto Fill
+
+
+The floating control should disappear only when:
+
+Close
+OR
+Stop Smart Fill
+OR
+system terminates the service.
+
+
+# 36. CLOSE BUTTON
+
+When user taps:
+
+CLOSE
+
+
+Do:
+
+overlayVisible = false
+
+
+Remove floating overlay immediately.
+
+Do NOT require reopening the app.
+
+
+If the intended meaning is "stop Smart Fill completely", also:
+
+smartFillState = STOPPED
+
+
+Use one clearly defined behavior and keep it consistent.
+
+
+# 37. APP INTERNAL STOP
+
+Inside app:
+
+Smart Fill
+[ STOP ]
+
+
+Tap:
+
+STOP
+
+
+Then:
+
+service stops
+overlay disappears
+state becomes STOPPED
+
+
+# 38. DOCUMENT CHECKMARK
+
+After successful upload:
+
+File selected
+ ↓
+Encrypted local save
+ ↓
+OCR
+ ↓
+Parser
+ ↓
+JSON
+ ↓
+JSON persistence
+ ↓
+Document metadata persisted
+ ↓
+available = true
+ ↓
+✓
+
+
+After app restart:
+
+Load local vault
+ ↓
+Document exists
+ ↓
+✓
+
+
+After delete:
+
+Delete encrypted document
+ ↓
+Delete metadata
+ ↓
+Delete JSON record
+ ↓
+available = false
+ ↓
+No ✓
+
+
+# 39. PROFILE DATA MUST BE AVAILABLE TO SMART FILL
+
+If user already saved:
+
+Full Name
+Phone
+Email
+DOB
+Address
+
+
+Smart Fill must immediately be able to use those values.
+
+Do NOT require re-uploading a document.
+
+
+# 40. DOCUMENT DATA MUST BE AVAILABLE TO SMART FILL
+
+Example:
+
+Aadhaar:
+
+Full Name
+Father's Name
+Mother's Name
+Aadhaar Number
+DOB
+Gender
+Address
+
+
+PAN:
+
+Name
+PAN Number
+DOB
+Father's Name
+
+
+Smart Fill should read these records from the local canonical JSON store.
+
+
+# 41. COPY
+
+Every suitable field:
+
+Aadhaar Number
+XXXX XXXX 1234
+
+[ COPY ]
+
+
+Copy only that value.
+
+
+# 42. SHARE
+
+User:
+
+Aadhaar Card
+ ↓
+Share
+
+
+Generate a user-visible share payload:
+
+Aadhaar Card
+
+Full Name: Example Name
+Father's Name: Example Father
+Mother's Name: Example Mother
+Aadhaar Number: XXXX XXXX 1234
+
+
+Use the operating system's standard share sheet.
+
+
+Do not silently send anything.
+
+
+The user chooses:
+
+WhatsApp
+Messages
+Email
+etc.
+
+
+# 43. SECURITY
+
+Sensitive information must NOT appear in:
+
+- debug logs
+- analytics
+- crash logs
+- network requests
+- cloud AI requests
+- plaintext temporary files
+
+
+Local encrypted storage remains the source of truth.
+
+
+# 44. BIOMETRIC SESSION
+
+Existing biometric behavior must NOT be broken.
+
+
+Desired behavior:
+
+Open app
+ ↓
+One authentication
+ ↓
+Secure session active
+ ↓
+User uploads/deletes/views documents
+ ↓
+No unexpected biometric prompt on every file picker operation
+
+
+Biometric re-authentication may occur when the existing security policy requires it, such as:
+
+- session timeout
+- app background timeout
+- explicit lock
+- sensitive operation requiring re-authentication
+
+
+Do NOT trigger biometric authentication repeatedly during a single valid session unless required by the existing security design.
+
+
+# 45. DASHBOARD UX
+
+Final dashboard:
+
+┌────────────────────────────────────────────┐
+│ Search documents...                    ☰  │
+├────────────────────────────────────────────┤
+│                                            │
+│ [ + Add ]                                  │
+│                                            │
+│ Documents                                  │
+│                                            │
+│ ✓ Aadhaar Card                             │
+│   Full Name                                │
+│   Aadhaar Number                           │
+│                                            │
+│ ✓ PAN Card                                 │
+│   Name                                     │
+│   PAN Number                               │
+│                                            │
+│ ✓ Driving Licence                          │
+│                                            │
+│                                            │
+│             [ GO — SMART FILL ]            │
+│                                            │
+└────────────────────────────────────────────┘
+
+
+NO bottom tab bar.
+
+
+# 46. THREE-LINE MENU
+
+Top-right:
+
+☰
+
+
+Open existing slide/drawer navigation.
+
+Do not duplicate existing navigation.
+
+Reuse current navigation routes where possible.
+
+
+# 47. SMART FILL DOCUMENT SELECTION
+
+When floating Smart Fill is opened:
+
+Show local documents:
+
+Aadhaar Card
+PAN Card
+Driving Licence
+Passport
+Profile
+
+
+Example:
+
+┌──────────────────────────────┐
+│ Smart Fill                  │
+├──────────────────────────────┤
+│ Profile                      │
+│ Aadhaar Card                 │
+│ PAN Card                     │
+│ Driving Licence              │
+│ Passport                     │
+├──────────────────────────────┤
+│ [ AUTO FILL ]   [ CLOSE ]    │
+└──────────────────────────────┘
+
+
+The document list must be loaded from the local vault.
+
+
+# 48. SELECT DOCUMENT → FIELD
+
+If user selects:
+
+Aadhaar Card
+
+
+Show:
+
+Full Name
+Father's Name
+Mother's Name
+Aadhaar Number
+DOB
+Gender
+Address
+
+
+User can select one field for focused fill.
+
+
+# 49. AUTO FILL
+
+If user chooses:
+
+AUTO FILL
+
+
+System should attempt all supported high-confidence mappings.
+
+Example:
+
+Website has:
+
+Name
+Email
+Phone
+Aadhaar Number
+
+
+System:
+
+Name → Profile/Aadhaar Full Name
+Email → Profile Email
+Phone → Profile Phone
+Aadhaar Number → Aadhaar Number
+
+
+Then:
+
+✓ 4 fields filled
+
+
+# 50. FIELDS THAT MUST NEVER BE AUTO-FILLED
+
+Never automatically fill:
+
+- Password
+- OTP
+- CVV
+- Payment card security code
+- CAPTCHA
+- 2FA
+- security questions
+- payment authorization
+- banking transaction confirmation
+
+
+Never automatically:
+
+- submit form
+- press Pay
+- press Confirm Payment
+- accept Terms
+- accept legal consent
+- bypass CAPTCHA
+- bypass authentication
+
+
+User must perform these actions manually.
+
+
+# 51. WEBSITE-SPECIFIC LIMITATION
+
+The developer must implement a compatibility layer.
+
+Every website should result in one of:
+
+SUPPORTED
+PARTIALLY_SUPPORTED
+NOT_SUPPORTED
+
+
+Example:
+
+SUPPORTED:
+
+Standard accessible input fields.
+
+
+PARTIALLY_SUPPORTED:
+
+Some fields exposed, some unavailable.
+
+
+NOT_SUPPORTED:
+
+No usable field metadata.
+
+
+Never show:
+
+"100% filled"
+
+unless verification actually confirms it.
+
+
+# 52. FORM RESULT UI
+
+After Auto Fill:
+
+┌──────────────────────────────┐
+│ Smart Fill Result            │
+├──────────────────────────────┤
+│ ✓ Full Name                  │
+│ ✓ Phone                      │
+│ ✓ Email                      │
+│ ✓ Aadhaar Number             │
+│                              │
+│ Not filled                   │
+│ • CAPTCHA                    │
+│ • OTP                        │
+│ • Password                   │
+│                              │
+│ [ DONE ]                     │
+└──────────────────────────────┘
+
+
+# 53. PERFORMANCE
+
+Because OCR happens at document-upload time:
+
+Smart Fill should NOT perform OCR.
+
+
+Target conceptual timing:
+
+Load local JSON:
+~10–100 ms
+
+Field detection:
+~100–500 ms
+
+Field matching:
+~50–300 ms
+
+Fill:
+~200–1000 ms
+
+
+Typical target:
+
+~0.5–2 seconds for a simple supported form.
+
+
+This is a target, NOT a universal guarantee.
+
+Actual performance depends on:
+
+- Android device CPU
+- RAM
+- browser
+- website implementation
+- accessibility tree
+- number of fields
+- field complexity
+- system restrictions
+
+
+# 54. LARGE DOCUMENT PERFORMANCE
+
+Documents should be processed once.
+
+Do not repeatedly keep large image buffers in memory.
+
+After OCR:
+
+release temporary buffers
+release OCR resources
+release model resources if applicable
+
+
+The canonical JSON is small and should be used for subsequent Smart Fill operations.
+
+
+# 55. BUILD SAFETY
+
+Before modifying:
+
+Run existing build.
+
+
+After every major native change:
+
+Run build.
+
+
+Never make many unrelated native changes at once.
+
+
+Required:
+
+- TypeScript check
+- lint
+- unit tests
+- Android compile
+- Android debug APK
+- Android release build
+- app launch
+- permission test
+- overlay test
+- Smart Fill test
+- document test
+- regression test
+
+
+If build fails:
+
+FIX THE BUILD.
+
+Do not report success.
+
+
+# 56. APK CRASH PREVENTION
+
+Before final response:
+
+Test:
+
+1. Cold launch
+2. Warm launch
+3. App unlock
+4. Add document
+5. Upload image
+6. OCR
+7. Save JSON
+8. Restart
+9. Search
+10. Copy
+11. Share
+12. GO
+13. Permission flow
+14. Floating overlay
+15. Minimize
+16. Open Chrome
+17. Detect form
+18. Auto Fill
+19. Single field fill
+20. Close overlay
+21. Stop Smart Fill
+22. Reopen app
+
+
+# 57. DATA MIGRATION
+
+If existing users already have data:
+
+DO NOT delete it.
+
+
+Migration:
+
+old data
+ ↓
+detect schema version
+ ↓
+migrate
+ ↓
+validate
+ ↓
+atomic save
+ ↓
+new schema
+
+
+If migration fails:
+
+keep old data intact.
+
+
+# 58. NO DUPLICATE DATA SOURCES
+
+There must be one canonical source.
+
+Profile:
+profile JSON
+
+
+Documents:
+document JSON
+
+
+Smart Fill:
+reads those records
+
+
+Share:
+reads those records
+
+
+Copy:
+reads those records
+
+
+Do not maintain:
+
+profile.json
+profile2.json
+smartfill-profile.json
+autofill-profile.json
+
+with separate values.
+
+
+# 59. REAL-TIME FORM DETECTION
+
+When the user opens a website:
+
+Do not continuously scan everything aggressively.
+
+
+Preferred:
+
+User taps:
+Smart Fill
+ ↓
+Analyze current supported form
+
+
+Then:
+
+Detect
+ ↓
+Match
+ ↓
+Fill
+
+
+For dynamic pages:
+
+Observe only relevant changes and refresh mapping when necessary.
+
+
+Avoid:
+
+infinite scanning loops
+high CPU usage
+continuous OCR
+continuous screenshot processing
+
+
+# 60. HTML TERMINOLOGY
+
+Do NOT call an AccessibilityService operation:
+
+"Read raw HTML"
+
+
+Use:
+
+"Analyze Form"
+
+
+or:
+
+"Detect Fields"
+
+
+Only call it HTML/DOM scanning if the app genuinely has a DOM/WebView bridge.
+
+
+# 61. ANDROID ARCHITECTURE
+
+Preferred conceptual architecture:
+
+React Native / existing UI
+        ↓
+Native Bridge
+        ↓
+SmartFillManager
+        ↓
+┌───────────────────────┐
+│ Android Autofill      │
+│ AccessibilityService  │
+│ Overlay Service       │
+└───────────────────────┘
+        ↓
+Local Vault
+        ↓
+Canonical JSON
+
+
+Do not create multiple SmartFill managers.
+
+
+# 62. IOS ARCHITECTURE
+
+DO NOT attempt to copy Android floating-overlay behavior directly to iOS.
+
+
+iOS must use platform-supported mechanisms.
+
+Where appropriate:
+
+Credential Provider / AutoFill extension
+        ↓
+Local protected data
+        ↓
+User-selected AutoFill
+        ↓
+Supported fields
+
+
+Do not promise arbitrary Chrome/Safari DOM access from the main app.
+
+
+# 63. IMPORTANT iOS LIMITATION
+
+iOS AutoFill uses Apple's extension/system architecture.
+
+A normal iOS app cannot simply create an Android-style always-on-top floating bubble above arbitrary apps.
+
+
+Therefore:
+
+Android:
+
+Floating Smart Fill
++
+Android Autofill / Accessibility where appropriate
+
+
+iOS:
+
+System-supported AutoFill / extension flow
+
+
+Do not fake a universal cross-platform floating overlay.
+
+
+# 64. GOOGLE PLAY / PLATFORM COMPLIANCE
+
+The implementation must be technically correct AND distributable.
+
+
+Accessibility usage must be reviewed against current Play policy.
+
+The app must not:
+
+- bypass Android security
+- manipulate settings without user permission
+- hide the accessibility service
+- use accessibility deceptively
+- autonomously execute unrelated actions
+- bypass CAPTCHA/security
+
+
+Use narrower APIs where possible.
+
+
+# 65. MASTER STATE FLOW
+
+APP:
+
+Launch
+ ↓
+Biometric/session unlock
+ ↓
+Dashboard
+ ↓
+Search / Add / Documents / GO
+
+
+DOCUMENT:
+
+Add
+ ↓
+Upload
+ ↓
+OCR
+ ↓
+Parse
+ ↓
+Review
+ ↓
+JSON
+ ↓
+Encrypted local storage
+ ↓
+✓
+
+
+SMART FILL:
+
+GO
+ ↓
+Permission Check
+ ↓
+Ready
+ ↓
+Floating
+ ↓
+Minimize
+ ↓
+Chrome/Supported App
+ ↓
+Open Form
+ ↓
+Floating
+ ↓
+AUTO FILL
+ ↓
+Detect
+ ↓
+Match JSON
+ ↓
+Fill
+ ↓
+Verify
+ ↓
+Result
+
+
+SINGLE FIELD:
+
+Focus field
+ ↓
+Floating
+ ↓
+Select document
+ ↓
+Select field
+ ↓
+Fill
+ ↓
+Verify
+
+
+# 66. FINAL ACCEPTANCE CRITERIA
+
+The implementation is complete ONLY if:
+
+[ ] Existing app lock works
+[ ] Existing biometric logic works
+[ ] Existing secure local vault works
+[ ] Existing document upload works
+[ ] Existing OCR works
+[ ] Existing parser works
+[ ] Existing JSON works
+[ ] Existing profile works
+[ ] Existing Smart Fill works
+[ ] Existing permissions work
+[ ] Existing floating system works
+
+NEW:
+
+[ ] Search bar is at top
+[ ] Three-line menu is top-right
+[ ] No bottom tab bar
+[ ] Add button is below search
+[ ] Manual records can be created
+[ ] Custom fields supported
+[ ] Aadhaar searchable
+[ ] PAN searchable
+[ ] Individual values can be copied
+[ ] Documents can be shared
+[ ] GO starts Smart Fill
+[ ] Floating control survives app minimization
+[ ] Floating control has Auto Fill
+[ ] Floating control has Close
+[ ] Auto Fill fills multiple compatible fields
+[ ] Single-field fill works
+[ ] Field matching is semantic
+[ ] JSON is used instead of OCR during Smart Fill
+[ ] "No approved matching fields" bug fixed
+[ ] Uploaded documents show persistent ✓
+[ ] App restart preserves records
+[ ] Fill result is verified
+[ ] Sensitive fields are not guessed
+[ ] Password/OTP/CAPTCHA/payment are never automatically filled
+[ ] Forms are never automatically submitted
+[ ] Android platform limitations are handled honestly
+[ ] iOS platform limitations are handled honestly
+[ ] Build passes
+[ ] APK launches
+[ ] No regression crash
+[ ] No sensitive data is logged
+[ ] No sensitive data is sent to cloud AI
+
+
+# 67. FINAL INSTRUCTION TO AI CODING AGENT
+
+DO NOT START CODING IMMEDIATELY.
+
+First produce an internal implementation plan after inspecting the repository.
+
+Identify:
+
+1. Existing modules
+2. Existing Smart Fill implementation
+3. Existing native Android code
+4. Existing local vault
+5. Existing JSON schema
+6. Existing profile schema
+7. Existing OCR/parser
+8. Existing overlay service
+9. Existing permission flow
+10. Existing build system
+
+
+Then implement only the required changes.
+
+
+MOST IMPORTANT:
+
+Do not break existing logic.
+
+Do not rewrite working code unnecessarily.
+
+Do not fake browser HTML access.
+
+Do not fake build success.
+
+Do not claim universal browser compatibility.
+
+Do not move sensitive data to the cloud.
+
+Do not re-run OCR during Smart Fill.
+
+Use canonical local JSON.
+
+Automatic Fill must be a first-class feature.
+
+Single-field selection must remain available.
+
+Final submission/confirmation must remain under user control.
+
+
+# 68. DEFINITION OF SUCCESS
+
+The final experience should feel like:
+
+Open App
+ ↓
+Unlock once
+ ↓
+Dashboard
+ ↓
+Search / Add / Documents
+ ↓
+GO
+ ↓
+Floating Smart Fill
+ ↓
+Minimize
+ ↓
+Open supported website
+ ↓
+Tap floating button
+ ↓
+AUTO FILL
+ ↓
+All confidently matched fields fill automatically
+ ↓
+User reviews
+ ↓
+User completes OTP/CAPTCHA/payment/submit manually
+
+
+And for one field:
+
+Focus website field
+ ↓
+Floating Smart Fill
+ ↓
+Select Aadhaar
+ ↓
+Select Full Name
+ ↓
+Fill only Full Name
+
+
+The system must be fast because the document was already converted into structured local JSON during upload.
+
+The system must be safe because the data remains inside the protected local vault.
+
+The system must be honest because unsupported websites/fields are reported instead of pretending they were filled.
+```
+
+### सबसे जरूरी genuine points
+
+1. **तुम्हारा Auto Fill वाला requirement सही architecture में possible है**, लेकिन “हर Chrome website का raw HTML पढ़ो” को literal requirement मत बनाओ। Android का Autofill Framework दूसरे apps के views को fill करने के लिए बना है, जबकि AccessibilityService accessible window/node content के साथ काम करता है। ([Android Developers][1])
+
+2. **Floating button का Android version possible है**, लेकिन overlay permission और service lifecycle properly implement करना पड़ेगा। Android 8+ में `TYPE_APPLICATION_OVERLAY` और `SYSTEM_ALERT_WINDOW` relevant हैं। ([Android Developers][3])
+
+3. **Android 14+ में background service को “बस हमेशा चलता रहेगा” मानना गलत है।** Foreground-service type/permission और background-start restrictions लागू हैं। ([Android Developers][4])
+
+4. **Google Play पर AccessibilityService वाला हिस्सा खास ध्यान से करना होगा।** अगर app accessibility tool नहीं है, तो disclosure/consent और Play Console declaration requirements लागू हो सकती हैं। ([Google Support][2])
+
+5. **iOS को Android जैसा floating overlay मत बनाना।** iOS में सही रास्ता system-supported AutoFill/extension architecture है; Apple का Credential Provider Extension इसी तरह के AutoFill integration के लिए है। ([developer.apple.com][5])
+
+और सबसे महत्वपूर्ण तुम्हारे performance goal के लिए architecture यही रहेगा:
+
+**Aadhaar/PAN upload → OCR + parsing सिर्फ एक बार → encrypted local JSON → बाद में website पर Auto Fill → JSON से direct matching/fill.**
+
+इससे website खोलते समय दोबारा Aadhaar image पढ़ने या OCR करने की जरूरत नहीं पड़ेगी।
+
+[1]: https://developer.android.com/identity/autofill?utm_source=chatgpt.com "Autofill framework  |  Identity  |  Android Developers"
+[2]: https://support.google.com/googleplay/android-developer/answer/16558241?hl=en&utm_source=chatgpt.com "Permissions and APIs that Access Sensitive Information - Play Console Help"
+[3]: https://developer.android.com/about/versions/oreo/android-8.0-changes?utm_source=chatgpt.com "Android 8.0 Behavior Changes  |  Android Developers"
+[4]: https://developer.android.com/about/versions/14/behavior-changes-14?utm_source=chatgpt.com "Behavior changes: Apps targeting Android 14 or higher  |  Android Developers"
+[5]: https://developer.apple.com/documentation/authenticationservices/ascredentialproviderviewcontroller?changes=__3&utm_source=chatgpt.com "ASCredentialProviderViewController | Apple Developer Documentation"

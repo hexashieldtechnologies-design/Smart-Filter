@@ -1,0 +1,1320 @@
+हाँ भाई, अब issue clear है. तुम्हें **पूरा existing app update करने का prompt** चाहिए, जिसमें Dashboard के अंदर complete profile/form record भी हो और सबसे important **biometric बार-बार बीच में interrupt न करे**।
+
+एक बात security-wise सही architecture यह रहेगा: **app खोलते समय एक authentication session unlock हो**, फिर उसी unlocked session के दौरान normal document operations—upload, delete, view, edit—बार-बार fingerprint न मांगें। Sensitive actions के लिए अलग confirmation/timeout रखा जा सकता है।
+
+यह prompt अपने coding agent को दे सकते हो:
+
+````markdown
+# UPDATE PROMPT — Dashboard Profile Form + Document Management + Single App Authentication Session
+
+## IMPORTANT
+
+Modify the EXISTING Flutter application.
+
+Do NOT rebuild the entire application from scratch.
+
+Do NOT remove existing functionality.
+
+Preserve existing:
+- navigation
+- authentication
+- local vault
+- document storage
+- Smart Fill
+- floating button
+- permission system
+- existing UI components
+
+Only update and fix the required functionality described below.
+
+---
+
+# 1. MAIN PROBLEM TO FIX
+
+Currently the app asks for fingerprint/biometric authentication repeatedly.
+
+Example:
+
+```text
+Open App
+   ↓
+Fingerprint
+   ↓
+Dashboard
+   ↓
+Upload Document
+   ↓
+Fingerprint AGAIN
+   ↓
+Upload gets interrupted
+   ↓
+Document upload fails/cancels
+````
+
+This behavior must be fixed.
+
+The application should authenticate the user ONCE when opening/unlocking the protected application and then maintain a secure authenticated session.
+
+Correct behavior:
+
+```text
+Open App
+   ↓
+Fingerprint / Device Authentication
+   ↓
+Secure Session UNLOCKED
+   ↓
+Dashboard
+   ↓
+Upload Aadhaar
+   ↓
+No second fingerprint
+   ↓
+Upload completes
+   ↓
+Add PAN
+   ↓
+No second fingerprint
+   ↓
+Delete/Edit/View document
+   ↓
+No unnecessary authentication interruption
+```
+
+---
+
+# 2. AUTHENTICATION SESSION
+
+Create a centralized:
+
+```text
+AppSecuritySession
+```
+
+Do NOT call the biometric prompt separately from every screen.
+
+Bad architecture:
+
+```text
+Dashboard → biometric
+Upload → biometric
+Delete → biometric
+Edit → biometric
+View → biometric
+```
+
+Correct architecture:
+
+```text
+App Launch
+     ↓
+Authentication
+     ↓
+Create authenticated session
+     ↓
+Dashboard
+     ↓
+All normal protected operations use same session
+```
+
+---
+
+# 3. SESSION STATES
+
+Implement:
+
+```text
+LOCKED
+AUTHENTICATING
+UNLOCKED
+EXPIRING
+LOCKED_AGAIN
+```
+
+Example:
+
+```text
+App starts
+   ↓
+LOCKED
+   ↓
+Fingerprint
+   ↓
+UNLOCKED
+```
+
+While:
+
+```text
+UNLOCKED
+```
+
+do not repeatedly display biometric prompts for ordinary document operations.
+
+---
+
+# 4. SESSION TIMEOUT
+
+The authenticated session must have a configurable timeout.
+
+Example:
+
+```text
+Session unlocked
+      ↓
+User uses app
+      ↓
+Upload/Edit/Delete/View
+      ↓
+No repeated biometric
+```
+
+If the app has been inactive/backgrounded beyond the configured security timeout:
+
+```text
+Session expires
+      ↓
+LOCKED
+      ↓
+Next access requires authentication
+```
+
+Recommended configuration:
+
+```text
+Security Session Timeout
+- Immediately
+- 1 minute
+- 5 minutes
+- 15 minutes
+- Until app is closed
+```
+
+Default can be:
+
+```text
+5 minutes
+```
+
+but make it configurable.
+
+---
+
+# 5. DOCUMENT UPLOAD FIX
+
+This is the most important bug fix.
+
+Current problematic flow:
+
+```text
+User selects image/file
+       ↓
+Biometric prompt appears
+       ↓
+Android file picker is interrupted
+       ↓
+Selected file is lost/cancelled
+```
+
+Replace it with:
+
+```text
+User opens Upload
+       ↓
+Check AppSecuritySession
+       ↓
+Session UNLOCKED?
+       ↓
+YES
+       ↓
+Open Android File Picker / Image Picker
+       ↓
+User selects file
+       ↓
+Process file
+       ↓
+Encrypt
+       ↓
+Save locally
+       ↓
+Update database
+       ↓
+Refresh UI
+```
+
+Do NOT trigger biometric authentication between:
+
+```text
+File Picker
+```
+
+and:
+
+```text
+File Processing
+```
+
+---
+
+# 6. FILE PICKER RULE
+
+The file picker must run without another authentication interruption if:
+
+```text
+AppSecuritySession == UNLOCKED
+```
+
+The same applies to:
+
+* Camera
+* Gallery
+* Image picker
+* PDF picker
+* Document picker
+* File picker
+
+---
+
+# 7. DOCUMENT UPLOAD FLOW
+
+Implement:
+
+```text
+Dashboard
+   ↓
+Add Document
+   ↓
+Select Document Type
+   ↓
+Choose:
+   - Camera
+   - Gallery
+   - Files
+   ↓
+Select file
+   ↓
+Preview
+   ↓
+User confirms
+   ↓
+Encrypt document
+   ↓
+Save to secure local vault
+   ↓
+Update encrypted database
+   ↓
+Dashboard refresh
+```
+
+---
+
+# 8. DOCUMENT TYPES
+
+Dashboard should provide document cards/options such as:
+
+```text
+Aadhaar Card
+PAN Card
+Passport
+Driving Licence
+Other Documents
+```
+
+Each should support:
+
+```text
+Add
+View
+Replace
+Delete
+```
+
+---
+
+# 9. PAN CARD OPTION
+
+Add a dedicated PAN Card section to the Dashboard.
+
+Example:
+
+```text
+┌──────────────────────────────┐
+│ PAN Card                     │
+│                              │
+│ Not Added                    │
+│                              │
+│        [ + Add PAN ]         │
+└──────────────────────────────┘
+```
+
+After upload:
+
+```text
+┌──────────────────────────────┐
+│ PAN Card                     │
+│                              │
+│ ✓ Added                      │
+│                              │
+│ [View] [Edit] [Replace]      │
+└──────────────────────────────┘
+```
+
+PAN data must remain protected by the secure local vault.
+
+---
+
+# 10. COMPLETE PROFILE / FORM
+
+Add a:
+
+```text
+FORM
+```
+
+option to the Dashboard.
+
+Example:
+
+```text
+Dashboard
+
+Documents
+[ Aadhaar ]
+[ PAN ]
+[ Passport ]
+
+Profile
+[ Personal Details ]
+
+Forms
+[ Complete Profile ]
+```
+
+---
+
+# 11. COMPLETE PROFILE FORM
+
+The form should contain all user information required by the application.
+
+Do NOT split essential profile information into random screens.
+
+Use clear sections.
+
+---
+
+# 12. PERSONAL INFORMATION
+
+Section:
+
+```text
+Personal Information
+```
+
+Fields:
+
+```text
+Full Name
+First Name
+Middle Name
+Last Name
+Date of Birth
+Gender
+Nationality
+Marital Status
+Father's Name
+Mother's Name
+Spouse Name (optional)
+```
+
+Use appropriate input controls.
+
+Example:
+
+```text
+Full Name
+[________________________]
+
+Date of Birth
+[ DD / MM / YYYY ]
+
+Gender
+[ Select ▼ ]
+```
+
+---
+
+# 13. CONTACT INFORMATION
+
+Section:
+
+```text
+Contact Details
+```
+
+Fields:
+
+```text
+Mobile Number
+Alternate Mobile Number
+Email Address
+Alternate Email Address
+```
+
+Validate:
+
+```text
+Phone number format
+Email format
+```
+
+---
+
+# 14. ADDRESS INFORMATION
+
+Section:
+
+```text
+Address Details
+```
+
+Fields:
+
+```text
+House / Flat Number
+Building / Street
+Area / Locality
+Village / Town / City
+District
+State
+Country
+PIN Code
+```
+
+Optionally provide:
+
+```text
+Permanent Address
+Current Address
+```
+
+with:
+
+```text
+[ ] Same as Permanent Address
+```
+
+---
+
+# 15. IDENTITY INFORMATION
+
+Section:
+
+```text
+Identity Details
+```
+
+Fields:
+
+```text
+Aadhaar Number
+PAN Number
+```
+
+Additional document identifiers can be added later if supported.
+
+Sensitive identifiers must be masked when displayed.
+
+Example:
+
+```text
+Aadhaar
+XXXX XXXX 1234
+
+PAN
+ABCDE•••••
+```
+
+---
+
+# 16. EDUCATION / PROFESSIONAL DETAILS
+
+If required by the existing application, provide a section for:
+
+```text
+Education
+Qualification
+Institution
+Course
+Year of Passing
+Occupation
+Organization
+Designation
+```
+
+Do not force irrelevant fields on users.
+
+Keep optional fields clearly marked.
+
+---
+
+# 17. BANK / PAYMENT INFORMATION
+
+Do NOT automatically include highly sensitive financial information merely because it might be useful later.
+
+Only create fields for financial data if the application explicitly requires them.
+
+If financial fields are added:
+
+* encrypt them
+* mask them
+* require explicit user consent
+* never log them
+* never expose them in Smart Fill unless explicitly approved
+
+---
+
+# 18. PROFILE SAVE
+
+At the bottom:
+
+```text
+[ Save Profile ]
+```
+
+When pressed:
+
+```text
+Validate fields
+     ↓
+Show validation errors if any
+     ↓
+Encrypt sensitive values
+     ↓
+Save to encrypted local database
+     ↓
+Update dashboard
+```
+
+Do NOT trigger another biometric prompt if:
+
+```text
+AppSecuritySession == UNLOCKED
+```
+
+---
+
+# 19. PROFILE EDIT
+
+Dashboard:
+
+```text
+Profile
+[ View / Edit ]
+```
+
+Opening the profile should not ask for fingerprint again while the security session is active.
+
+Flow:
+
+```text
+Dashboard
+   ↓
+Profile
+   ↓
+Edit
+   ↓
+Save
+```
+
+No unnecessary authentication interruption.
+
+---
+
+# 20. DELETE DOCUMENT
+
+When user deletes a document:
+
+```text
+Dashboard
+   ↓
+Document
+   ↓
+Delete
+   ↓
+Confirmation dialog
+   ↓
+Delete encrypted file
+   ↓
+Delete database record
+   ↓
+Refresh UI
+```
+
+Do not trigger a second biometric prompt while the authenticated session is active.
+
+Confirmation dialog:
+
+```text
+Delete PAN Card?
+
+This document will be permanently removed
+from your secure local vault.
+
+[Cancel] [Delete]
+```
+
+---
+
+# 21. SENSITIVE ACTION POLICY
+
+Do not remove security completely.
+
+Instead create:
+
+```text
+SecurityPolicy
+```
+
+with categories:
+
+### Normal actions
+
+No additional authentication while session is unlocked:
+
+```text
+Upload
+View
+Edit
+Replace
+Delete
+Save
+Profile update
+```
+
+### Highly sensitive actions
+
+Optionally require step-up authentication:
+
+```text
+Export all documents
+Disable App Lock
+Reset secure vault
+Change security settings
+Delete entire account/vault
+```
+
+This prevents unnecessary authentication prompts while preserving security for destructive/high-risk operations.
+
+---
+
+# 22. IMPORTANT: CENTRALIZED AUTHENTICATION
+
+There must be ONE authentication manager.
+
+Example:
+
+```text
+AuthenticationManager
+```
+
+Responsibilities:
+
+```text
+authenticate()
+isSessionUnlocked()
+unlockSession()
+lockSession()
+expireSession()
+refreshSession()
+```
+
+Do NOT directly call:
+
+```text
+BiometricPrompt
+```
+
+from:
+
+```text
+UploadScreen
+DeleteScreen
+ProfileScreen
+DashboardScreen
+DocumentScreen
+```
+
+All screens must communicate with:
+
+```text
+AuthenticationManager
+```
+
+---
+
+# 23. SESSION CHECK
+
+Before protected actions:
+
+```text
+if AuthenticationManager.isSessionUnlocked():
+    continue
+else:
+    authenticate()
+```
+
+Example:
+
+```text
+Future<void> uploadDocument() async {
+
+    if (!authManager.isSessionUnlocked()) {
+        final success = await authManager.authenticate();
+
+        if (!success) {
+            return;
+        }
+    }
+
+    // NOW open file picker
+
+    final file = await pickFile();
+
+    if (file == null) {
+        return;
+    }
+
+    await secureVault.store(file);
+}
+```
+
+IMPORTANT:
+
+Authentication must happen BEFORE opening the picker, not after the picker starts.
+
+---
+
+# 24. FILE PICKER INTERRUPTION FIX
+
+Never do this:
+
+```text
+openFilePicker()
+      ↓
+biometric()
+```
+
+Correct:
+
+```text
+checkSession()
+      ↓
+authenticate if required
+      ↓
+openFilePicker()
+      ↓
+select file
+      ↓
+process
+```
+
+This specifically fixes the current upload failure.
+
+---
+
+# 25. CAMERA FLOW
+
+Correct:
+
+```text
+Check authentication session
+       ↓
+Session unlocked
+       ↓
+Open camera
+       ↓
+Capture image
+       ↓
+Preview
+       ↓
+Confirm
+       ↓
+Encrypt
+       ↓
+Store
+```
+
+Do not trigger biometric authentication while the camera is active.
+
+---
+
+# 26. GALLERY FLOW
+
+Correct:
+
+```text
+Check session
+      ↓
+Open gallery
+      ↓
+Select image
+      ↓
+Preview
+      ↓
+Confirm
+      ↓
+Encrypt
+      ↓
+Store
+```
+
+No mid-operation biometric prompt.
+
+---
+
+# 27. DOCUMENT PREVIEW
+
+After selecting:
+
+```text
+Aadhaar.jpg
+```
+
+show:
+
+```text
+Preview
+
+[Document Image]
+
+Document Type:
+Aadhaar Card
+
+[Cancel]
+[Save Securely]
+```
+
+After confirmation:
+
+```text
+Encrypt
+ ↓
+Save local vault
+ ↓
+Update database
+```
+
+---
+
+# 28. DASHBOARD DESIGN
+
+Update the dashboard to contain:
+
+```text
+┌──────────────────────────────────┐
+│           Dashboard              │
+├──────────────────────────────────┤
+│                                  │
+│  Personal Profile                │
+│  ✓ Complete                      │
+│                                  │
+│  [ View / Edit Profile ]         │
+│                                  │
+├──────────────────────────────────┤
+│  Documents                       │
+│                                  │
+│  Aadhaar Card     ✓ Added        │
+│  PAN Card         + Add          │
+│  Passport         + Add          │
+│  Driving Licence  + Add          │
+│                                  │
+├──────────────────────────────────┤
+│  Forms                            │
+│                                  │
+│  [ Complete Profile Form ]       │
+│                                  │
+└──────────────────────────────────┘
+```
+
+Keep the existing application's visual design.
+
+---
+
+# 29. DOCUMENT STATUS
+
+Each document should have a status:
+
+```text
+NOT_ADDED
+UPLOADING
+PROCESSING
+SAVED
+ERROR
+```
+
+Example:
+
+```text
+PAN Card
+Status: Uploading...
+```
+
+Then:
+
+```text
+PAN Card
+✓ Securely Stored
+```
+
+---
+
+# 30. DATABASE MODEL
+
+Create separate entities conceptually:
+
+```text
+UserProfile
+Document
+SecuritySession
+```
+
+Example:
+
+```text
+UserProfile
+----------------
+id
+fullName
+firstName
+middleName
+lastName
+dateOfBirth
+gender
+nationality
+fatherName
+motherName
+mobile
+email
+address
+aadhaarReference
+panReference
+createdAt
+updatedAt
+```
+
+Sensitive values must be encrypted.
+
+---
+
+# 31. DOCUMENT MODEL
+
+```text
+Document
+----------------
+id
+type
+encryptedFilePath
+createdAt
+updatedAt
+status
+metadata
+```
+
+Never store raw sensitive document contents in logs.
+
+---
+
+# 32. LOCAL DATABASE RULE
+
+The database should contain encrypted references/metadata and encrypted sensitive values.
+
+The actual document files should be encrypted separately.
+
+Architecture:
+
+```text
+Encrypted Database
+      ↓
+Document Metadata
+      ↓
+Encrypted File Reference
+      ↓
+Encrypted File
+```
+
+---
+
+# 33. APP UPDATE DATA PRESERVATION
+
+Before every release, test:
+
+```text
+Install v1
+ ↓
+Create profile
+ ↓
+Upload Aadhaar
+ ↓
+Upload PAN
+ ↓
+Close app
+ ↓
+Update to v2
+ ↓
+Open app
+ ↓
+Fingerprint once
+ ↓
+Dashboard
+ ↓
+Profile still exists
+ ↓
+Aadhaar still exists
+ ↓
+PAN still exists
+```
+
+This test must pass.
+
+---
+
+# 34. BIOMETRIC BUG ACCEPTANCE TEST
+
+Test this exact scenario:
+
+```text
+1. Open application
+2. Fingerprint once
+3. Dashboard opens
+4. Tap Add PAN
+5. File picker opens
+6. Select PAN image
+7. Preview appears
+8. Tap Save
+9. Document encrypts
+10. PAN appears on dashboard
+```
+
+Expected:
+
+```text
+ONLY ONE biometric authentication
+at application unlock.
+
+NO fingerprint prompt should interrupt
+the file picker or upload operation.
+```
+
+---
+
+# 35. SMART FILL COMPATIBILITY
+
+Smart Fill must use the same:
+
+```text
+AuthenticationManager
+```
+
+and:
+
+```text
+AppSecuritySession
+```
+
+It must NOT create an independent biometric flow for every field.
+
+Correct:
+
+```text
+App unlocked
+     ↓
+Smart Fill active
+     ↓
+Approved profile data available
+     ↓
+Fill required fields
+```
+
+If the session expires:
+
+```text
+Smart Fill requests sensitive data
+     ↓
+Authentication required
+     ↓
+Unlock session
+     ↓
+Continue
+```
+
+---
+
+# 36. PERFORMANCE
+
+Do not:
+
+* initialize biometric authentication repeatedly
+* repeatedly decrypt the entire vault
+* reload all documents after every field update
+* scan all files unnecessarily
+* repeatedly query the database
+
+Use:
+
+```text
+Session
+Repository
+Caching
+State Management
+```
+
+appropriately.
+
+---
+
+# 37. ERROR HANDLING
+
+### Authentication failed
+
+```text
+Authentication failed.
+Please try again.
+```
+
+### File picker cancelled
+
+```text
+No document selected.
+```
+
+Do NOT treat cancellation as an authentication error.
+
+### Upload failed
+
+```text
+Document could not be securely saved.
+
+Please try again.
+```
+
+### Encryption failure
+
+```text
+Document could not be encrypted.
+The original file has not been added to the vault.
+```
+
+---
+
+# 38. IMPORTANT SECURITY RULE
+
+Do not weaken security just to solve the repeated biometric issue.
+
+The correct solution is:
+
+```text
+ONE authenticated application session
++
+secure session timeout
++
+step-up authentication only for
+high-risk operations
+```
+
+NOT:
+
+```text
+Remove authentication completely
+```
+
+---
+
+# 39. FINAL ACCEPTANCE CRITERIA
+
+The update is complete only when:
+
+* [ ] Dashboard contains Profile/Form section.
+* [ ] Dashboard contains PAN Card option.
+* [ ] Dashboard contains document management.
+* [ ] Complete profile form contains all required personal/contact/address/identity fields.
+* [ ] Aadhaar number can be stored securely.
+* [ ] PAN number can be stored securely.
+* [ ] Documents can be uploaded.
+* [ ] Documents can be replaced.
+* [ ] Documents can be deleted.
+* [ ] Documents remain after app restart.
+* [ ] Documents remain after normal app update.
+* [ ] Existing local data is migrated instead of deleted.
+* [ ] App asks for biometric/device authentication when unlocking the protected app.
+* [ ] Authentication creates a reusable secure session.
+* [ ] Upload does NOT trigger another biometric prompt.
+* [ ] File picker is never interrupted by biometric authentication.
+* [ ] Camera is not interrupted by biometric authentication.
+* [ ] Gallery is not interrupted by biometric authentication.
+* [ ] Delete does not unnecessarily trigger biometric authentication.
+* [ ] Profile edit does not unnecessarily trigger biometric authentication.
+* [ ] Smart Fill uses the same security session.
+* [ ] Session timeout works correctly.
+* [ ] High-risk actions can use step-up authentication.
+* [ ] Sensitive values remain encrypted.
+* [ ] No sensitive values are written to logs.
+* [ ] No biometric/PIN data is stored by the application.
+
+---
+
+# FINAL IMPLEMENTATION PRIORITY
+
+Implement in this order:
+
+```text
+1. Fix AuthenticationManager
+          ↓
+2. Create AppSecuritySession
+          ↓
+3. Fix biometric repeated-prompt bug
+          ↓
+4. Fix document picker/upload flow
+          ↓
+5. Add Dashboard Profile/Form
+          ↓
+6. Add PAN Card section
+          ↓
+7. Add complete document management
+          ↓
+8. Preserve encrypted data during updates
+          ↓
+9. Integrate Smart Fill with same session
+          ↓
+10. Run complete regression tests
+```
+
+The final behavior should be:
+
+```text
+OPEN APP
+   ↓
+FINGERPRINT / DEVICE AUTHENTICATION — ONCE
+   ↓
+DASHBOARD
+   ↓
+PROFILE / FORM
+   ↓
+ADD PAN
+   ↓
+FILE PICKER
+   ↓
+SELECT IMAGE
+   ↓
+SAVE
+   ↓
+PAN STORED SECURELY
+   ↓
+NO EXTRA FINGERPRINT
+   ↓
+RETURN TO DASHBOARD
+```
+
+The security system must remain active, but authentication must not interrupt normal document operations while the current secure session is valid.
+
+```
+```

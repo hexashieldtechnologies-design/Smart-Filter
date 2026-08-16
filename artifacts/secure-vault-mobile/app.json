@@ -2,7 +2,7 @@
   "expo": {
     "name": "Secure Vault",
     "slug": "secure-vault-mobile",
-    "version": "1.0.0",
+    "version": "1.0.15",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "secure-vault-mobile",
@@ -18,8 +18,11 @@
     },
     "android": {
       "permissions": [
-        "SYSTEM_ALERT_WINDOW"
-      ]
+        "SYSTEM_ALERT_WINDOW",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_SPECIAL_USE"
+      ],
+      "package": "com.anonymous.securevaultmobile"
     },
     "web": {
       "favicon": "./assets/images/icon.png"
